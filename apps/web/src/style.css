@@ -13,3 +13,11 @@ select{background:#0d1118;border:1px solid #3b4657;border-radius:9px;color:white
 .account{margin-top:22px;border-top:1px solid #303846;padding-top:14px}.account summary{cursor:pointer;color:#aab5c5;font-weight:700}
 .danger{background:#ff8a8a;color:#1a0707}.legal{max-width:760px;padding:40px 0;line-height:1.7;color:#c5d0df}.legal h1{font-size:44px;letter-spacing:-2px}
 .legal h2{font-size:20px;margin-top:32px}.legal a,.brand{color:#56c5d5;text-decoration:none}.brand strong{color:#eef2f8}.draft{border:1px solid #6b5a2a;background:#2a2310;color:#f0d68a;border-radius:8px;padding:10px 14px}
+.tabs{display:flex;gap:8px;margin:6px 0 18px}.admin h3{margin:26px 0 10px;font-size:16px}.admin-head{justify-content:space-between}.admin-head h3{margin:0}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tile{border:1px solid #303846;border-radius:10px;padding:16px;background:#0d1118;display:grid;gap:6px}
+.tile small{font:11px 'DM Mono',monospace;letter-spacing:1.5px;color:#7e91a8;text-transform:uppercase}.tile b{font-size:28px}
+.config{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0}.config div{border:1px solid #303846;border-radius:10px;padding:12px 14px}
+.config dt{font-size:12px;color:#7e8999}.config dd{margin:4px 0 0;font-weight:700;word-break:break-word}
+.table-wrap{overflow-x:auto;border:1px solid #303846;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #222a36;white-space:nowrap}th{color:#7e91a8;font-weight:600;background:#0d1118}
+@media(max-width:700px){.tiles,.config{grid-template-columns:repeat(2,1fr)}}

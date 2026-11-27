@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # Identity
     jwt_secret: str = ""
     jwt_expire_minutes: int = 30
+    # Comma-separated emails that become platform admins when they register.
+    admin_emails: str = ""
 
     # Models
     litellm_model: str = "gpt-4o-mini"
@@ -55,6 +57,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return _split_csv(self.cors_origins)
+
+    @property
+    def admin_email_list(self) -> set[str]:
+        return {e.lower() for e in _split_csv(self.admin_emails)}
 
     @property
     def allowed_model_list(self) -> list[str]:

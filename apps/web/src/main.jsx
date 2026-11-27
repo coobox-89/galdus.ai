@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
 import { AcceptableUse, Privacy, Terms } from './legal';
+import { AdminConsole } from './admin';
 import { currentRoute, href } from './paths';
 import './style.css';
 
@@ -91,6 +92,7 @@ function Workspace({ token, user, onExpired, onLogout }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [usage, setUsage] = useState({ prompt_tokens: 0, completion_tokens: 0 });
+  const [view, setView] = useState('chat');
   const endRef = useRef(null);
 
   const handle = useCallback((err) => {
@@ -153,6 +155,13 @@ function Workspace({ token, user, onExpired, onLogout }) {
         </div>
         <button type="button" className="secondary" onClick={onLogout}>Sign out</button>
       </div>
+      {user?.is_platform_admin && (
+        <div className="tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={view === 'chat'} className={view === 'chat' ? '' : 'secondary'} onClick={() => setView('chat')}>Chat</button>
+          <button type="button" role="tab" aria-selected={view === 'admin'} className={view === 'admin' ? '' : 'secondary'} onClick={() => setView('admin')}>Admin console</button>
+        </div>
+      )}
+      {view === 'admin' && user?.is_platform_admin ? <AdminConsole token={token} currentUserId={user.id} onError={handle} /> : <>
       <div className="controls">
         <label>Workspace
           <select value={organizationId} onChange={e => { setOrganizationId(e.target.value); setMessages([]); }} disabled={!organizations.length}>
@@ -183,6 +192,7 @@ function Workspace({ token, user, onExpired, onLogout }) {
           {usage.prompt_tokens + usage.completion_tokens > 0 && <small className="usage">{usage.prompt_tokens + usage.completion_tokens} tokens this session</small>}
         </div>
       </form>
+      </>}
       {error && <p role="alert" className="error">{error}</p>}
       <AccountPanel token={token} onDeleted={onLogout} onError={handle} />
     </>

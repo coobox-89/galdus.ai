@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .admin import router as admin_router
 from .chat import router as chat_router
 from .config import settings
 from .db import get_db
@@ -53,6 +54,7 @@ app.add_middleware(
 
 app.include_router(identity_router)
 app.include_router(chat_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")
