@@ -1,0 +1,11 @@
+# HTTPS front door for the Docker Compose production setup (docker-compose.prod.yml).
+# Caddy gets and renews a Let's Encrypt certificate for $DOMAIN automatically; the DNS A/AAAA
+# record must point at this server and ports 80 and 443 must be open.
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy web:80
+}

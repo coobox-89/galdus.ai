@@ -25,6 +25,7 @@ from .governance import audit, require_role
 from .identity import current_membership
 from .models import McpServer, Membership
 from .providers import validate_base_url
+from .version import VERSION
 
 router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 
@@ -87,7 +88,7 @@ async def fetch_public_text(url: str) -> tuple[str, str]:
     """Fetch a public https URL (SSRF-checked on every redirect). Returns (title, text)."""
     for _ in range(4):
         validate_base_url(url, allow_private=False)
-        async with httpx.AsyncClient(timeout=20, follow_redirects=False, headers={"User-Agent": "Galdus.ai/0.4 (+https://github.com/coobox-89/galdus.ai)"}) as client:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=False, headers={"User-Agent": f"Galdus.ai/{VERSION} (+https://github.com/coobox-89/galdus.ai)"}) as client:
             async with client.stream("GET", url) as resp:
                 if resp.is_redirect and resp.headers.get("location"):
                     url = str(resp.url.join(resp.headers["location"]))

@@ -265,7 +265,7 @@ async def execute(db: AsyncSession, membership: Membership, *, instructions: str
         run.status, run.error = "failed", str(exc.detail)[:500]
     run.model, run.prompt_tokens, run.completion_tokens = label, total_p, total_c
     if flagged:
-        steps.append({"tool": "guardrail", "ok": True, "output": "Neutralised possible prompt injection: " + "; ".join(sorted(set(flagged)))[:400]})
+        steps.append({"tool": "guardrail", "ok": True, "output": "Neutralized possible prompt injection: " + "; ".join(sorted(set(flagged)))[:400]})
     run.steps = steps
     run.sources = [{k: s[k] for k in ("title", "document_id", "chunk", "score")} | {"excerpt": s["content"][:300]} for s in ctx["sources"][:10]]
     run.duration_ms = int((time.monotonic() - started) * 1000)

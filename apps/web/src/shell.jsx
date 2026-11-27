@@ -16,6 +16,7 @@ import { TeamPage } from './team';
 import { AdminPage } from './admin';
 import { Avatar } from './profile';
 import { AccountPage } from './account';
+import { TourProvider } from './tour';
 
 export const NAV = [
   { group: 'Work', items: [['home', 'Home'], ['chat', 'Chat'], ['apps', 'Apps'], ['agents', 'Agents']] },
@@ -58,7 +59,8 @@ export function Shell({ onLogout }) {
   const [palette, setPalette] = useState(false);
   const nav = useMemo(() => ws.user?.is_platform_admin
     ? NAV.map(g => g.group === 'Manage' ? { ...g, items: [...g.items, ['admin', 'Platform admin']] } : g) : NAV, [ws.user]);
-  const Page = PAGES[route] || HomePage;
+  // The platform console is only for platform admins: anyone else opening #/admin lands on Home.
+  const Page = (route === 'admin' && !ws.user?.is_platform_admin) ? HomePage : (PAGES[route] || HomePage);
   const navigate = r => { go(r); setDrawer(false); setPalette(false); };
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export function Shell({ onLogout }) {
 
 
   return (
+    <TourProvider go={navigate}>
     <div className="shell">
       <Aurora />
       <aside className={`sidebar ${drawer ? 'open' : ''}`} aria-label="Main navigation">
@@ -90,7 +93,7 @@ export function Shell({ onLogout }) {
                 {g.items.map(([id, label]) => {
                   const Icon = ICONS[id];
                   return (
-                    <button key={id} type="button" className={`nav-item ${route === id ? 'active' : ''}`}
+                    <button key={id} type="button" className={`nav-item ${route === id ? 'active' : ''}`} data-tour={`nav-${id}`}
                       aria-current={route === id ? 'page' : undefined} onClick={() => navigate(id)}>
                       {route === id && <motion.span layoutId="nav-pill" className="nav-pill" transition={{ type: 'spring', stiffness: 480, damping: 36 }} />}
                       <Icon strokeWidth={2.2} aria-hidden="true" />
@@ -109,13 +112,14 @@ export function Shell({ onLogout }) {
             <div><b>{ws.user?.full_name}</b><small>{ws.user?.email}</small></div>
           </div>
           <button type="button" className="btn ghost sm" onClick={onLogout}><LogOut size={15} /> Sign out</button>
+          <small className="app-version" title="Console version">v{__APP_VERSION__}</small>
         </div>
       </aside>
       <div className={`drawer-scrim ${drawer ? 'open' : ''}`} onClick={() => setDrawer(false)} />
 
       <div className="main">
         <header className="topbar">
-          <button type="button" className="btn ghost sm icon" onClick={() => setDrawer(true)} aria-label="Open menu"><Menu size={18} /></button>
+          <button type="button" className="btn ghost sm icon" onClick={() => setDrawer(true)} aria-label="Open menu" data-tour="menu"><Menu size={18} /></button>
           <div className="brand-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Mark size={24} /><Wordmark /></div>
           <button type="button" className="btn quiet sm icon" onClick={() => setPalette(true)} aria-label="Search"><Search size={18} /></button>
         </header>
@@ -132,6 +136,7 @@ export function Shell({ onLogout }) {
 
       <AnimatePresence>{palette && <Palette nav={nav} onPick={navigate} onClose={() => setPalette(false)} />}</AnimatePresence>
     </div>
+    </TourProvider>
   );
 }
 

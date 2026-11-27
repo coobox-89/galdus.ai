@@ -25,7 +25,7 @@ export function AdminPage() {
     </div>);
   if (tab === 'setup') return (
     <div className="stack">
-      <PageHead title="Platform admin" actions={tabs}>Turn on sign-in with Google and GitHub, cloud drives, email and the scheduler. Each card guides you step by step.</PageHead>
+      <PageHead title="Platform admin" actions={tabs}>Turn on sign-in with Google, GitHub and Microsoft, cloud drives, email and the scheduler. Each card guides you step by step.</PageHead>
       <SetupPanel />
     </div>);
   if (!d) return <PageHead title="Platform admin" actions={tabs}>Loading…</PageHead>;
@@ -55,14 +55,14 @@ const RENDER_STEPS = ['Open dashboard.render.com and the galdus-api service.', '
 const GUIDES = {
   encryption: { title: 'Encryption key', what: 'Encrypts the model keys and drive tokens each workspace stores.', critical: true,
     steps: ['Generate a long random value, for example with: python -c "import secrets; print(secrets.token_urlsafe(48))"', 'Keep a copy in your password manager: if it changes, stored keys can no longer be read.'] },
-  admins: { title: 'Platform administrators', what: 'Who sees this console. People with these emails become admins when they register.',
+  admins: { title: 'Platform administrators', what: 'Who sees this console. People with these emails become admins once their address is confirmed (email link, Google or GitHub).',
     steps: ['List the emails, separated by commas.', 'People who already have an account: use Make admin in Overview, Users.'] },
   google: { title: 'Sign in with Google and Google Drive', what: 'One-click sign-in with Google, and importing Drive files into knowledge.', link: 'https://console.cloud.google.com/apis/credentials',
     steps: ['In Google Cloud, create a project, then open APIs and services.', 'OAuth consent screen: choose External, fill in the app name and your email, then Publish app.', 'Library: enable the Google Drive API (only needed for Drive).', 'Credentials: Create credentials, OAuth client ID, type Web application. Add both redirect URIs below.', 'Copy the client ID and the client secret.'] },
   github: { title: 'Sign in with GitHub', what: 'One-click sign-in with a GitHub account.', link: 'https://github.com/settings/developers',
     steps: ['On GitHub open Settings, Developer settings, OAuth Apps, New OAuth App.', 'Homepage URL: the console address below. Authorization callback URL: the redirect URI below.', 'Register the app, then Generate a new client secret.', 'Copy the client ID and the client secret.'] },
-  microsoft: { title: 'SharePoint and OneDrive', what: 'Importing files from SharePoint and OneDrive into knowledge.', link: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
-    steps: ['In Microsoft Entra, App registrations, New registration. Accounts: any organizational directory and personal accounts.', 'Redirect URI: platform Web, the address below.', 'Certificates and secrets: New client secret, copy its value.', 'API permissions, Microsoft Graph, delegated: User.Read, Files.Read.All, Sites.Read.All, offline_access.', 'Copy the Application (client) ID. MICROSOFT_TENANT can stay common.'] },
+  microsoft: { title: 'Sign in with Microsoft, SharePoint and OneDrive', what: 'One-click sign-in with a Microsoft account, and importing files from SharePoint and OneDrive into knowledge.', link: 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+    steps: ['In Microsoft Entra, App registrations, New registration. Accounts: any organizational directory and personal accounts.', 'Redirect URIs: platform Web, both addresses below (sign-in and drives).', 'Certificates and secrets: New client secret, copy its value.', 'API permissions, Microsoft Graph, delegated: User.Read, Files.Read.All, Sites.Read.All, offline_access.', 'Copy the Application (client) ID. MICROSOFT_TENANT can stay common.'] },
   email: { title: 'Email', what: 'Password reset and invitation emails.', link: 'https://www.brevo.com/products/transactional-email/',
     steps: ['Pick any SMTP provider (Brevo, Resend, Mailgun, Amazon SES). Several have a free tier.', 'Verify the sender address or domain with the provider.', 'Copy the SMTP host, port (usually 587), user and password. SMTP_FROM is the sender, for example Galdus <no-reply@yourdomain.com>.'] },
   scheduler: { title: 'Automation scheduler', what: 'Runs scheduled automations and the daily drive re-sync, every 15 minutes, for free with GitHub Actions.',

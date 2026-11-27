@@ -39,6 +39,24 @@ test('register a workspace', async () => {
   await expect(page.getByText('Set up your workspace')).toBeVisible();
 });
 
+test('first-run tour: walk through every step and finish', async () => {
+  const tour = page.getByRole('dialog', { name: 'Welcome to Galdus' });
+  await expect(tour).toBeVisible();
+  const titles = ['Connect a model', 'Chat', 'Knowledge', 'Agents', 'Automations', 'Account and security'];
+  for (const title of titles) {
+    await page.getByRole('button', { name: /^Next/ }).click();
+    await expect(page.getByRole('dialog', { name: title })).toBeVisible();
+  }
+  await expect(page.getByText('Step 7 of 7')).toBeVisible();
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // Saved on the account: a reload does not bring it back.
+  await page.reload();
+  await expect(page.locator('nav')).toBeVisible();
+  await expect(page.locator('.tour-panel')).toHaveCount(0);
+  await nav('Home');
+});
+
 test('connect a model with the wizard', async () => {
   await nav('Models');
   await page.locator('.prov-card', { hasText: 'OpenAI-compatible' }).click();
@@ -81,6 +99,14 @@ test('agents: create and run', async () => {
   await expect(page.getByText('Succeeded').first()).toBeVisible();
 });
 
+test('apps: run a built-in app', async () => {
+  await nav('Apps');
+  await page.getByRole('button', { name: /Summarize/ }).first().click();
+  await page.locator('form textarea').fill('Galdus collega modelli, documenti, agenti e automazioni in un unico spazio di lavoro.');
+  await page.getByRole('button', { name: 'Run summarize' }).click();
+  await expect(page.getByText('tutto funziona').first()).toBeVisible();
+});
+
 test('automation wizard and run now', async () => {
   await nav('Automations');
   await page.getByRole('button', { name: /New automation|Create your first automation/ }).first().click();
@@ -97,11 +123,30 @@ test('automation wizard and run now', async () => {
   await page.locator('.wz-foot').getByRole('button', { name: 'Done' }).click();
 });
 
-test('team: invite a teammate', async () => {
+test('team: invite a teammate who joins with the link', async ({ browser }) => {
+  const mate = `mate-${Date.now()}@example.com`;
   await nav('Team');
-  await page.getByPlaceholder('name@company.com').fill('teammate@example.com');
+  await page.getByPlaceholder('name@company.com').fill(mate);
   await page.getByRole('button', { name: 'Create invitation' }).click();
   await expect(page.getByText('Send this link to your teammate')).toBeVisible();
+  const token = (await page.locator('.secret-box code').innerText()).split('invite=')[1].trim();
+
+  const other = await browser.newPage();
+  await other.goto('/');
+  await other.getByRole('button', { name: 'Create a workspace' }).click();
+  await other.getByLabel('Full name').fill('Team Mate');
+  await other.getByPlaceholder('Your company or team').fill('Mate Home');
+  await other.getByLabel('Email').fill(mate);
+  await other.getByLabel('Password').fill(password);
+  await other.getByRole('button', { name: 'Create workspace' }).click();
+  await other.getByRole('button', { name: 'Skip tour' }).click();
+  await other.evaluate(t => { window.location.hash = `/account?invite=${t}`; }, token);
+  await other.getByRole('button', { name: 'Accept invitation' }).click();
+  await expect(other.getByText('You joined E2E SpA.')).toBeVisible();
+  await other.close();
+  await page.reload();
+  await nav('Team');
+  await expect(page.getByRole('cell', { name: mate })).toBeVisible();
 });
 
 test('turn on two-step verification and sign in with it', async () => {

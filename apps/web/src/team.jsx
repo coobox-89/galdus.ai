@@ -90,7 +90,7 @@ export function TeamPage() {
               <input type="number" min="0" value={settings.monthly_token_limit} disabled={!ws.isOwner} onChange={e => setSettings({ ...settings, monthly_token_limit: e.target.value })} /></label>
           </div>
           <label className="check"><input type="checkbox" checked={settings.guardrails_enabled} disabled={!ws.isOwner} onChange={e => setSettings({ ...settings, guardrails_enabled: e.target.checked })} />
-            <span>Guardrails<small>Treat documents and tool results as data and neutralise likely prompt-injection attempts.</small></span></label>
+            <span>Guardrails<small>Treat documents and tool results as data and neutralize likely prompt-injection attempts.</small></span></label>
           {ws.isOwner && <div><button className="btn">Save policies</button></div>}
         </form>)}
 

@@ -58,7 +58,7 @@ def test_oauth_login_creates_user_then_reuses_identity(client, monkeypatch):
     import uuid
     octo = f"octo-{uuid.uuid4().hex[:8]}@example.com"
     fake_oauth(monkeypatch, {"subject": f"gh-{uuid.uuid4().hex}", "email": octo, "name": "Octo Cat", "verified": True})
-    assert client.get("/api/v1/auth/providers").json()["login"] == ["google", "github"]
+    assert client.get("/api/v1/auth/providers").json()["login"] == ["google", "github", "microsoft"]
     r = client.get("/api/v1/auth/oauth/github/callback", params={"code": "c", "state": state_for("github", client=client)}, follow_redirects=False)
     assert r.status_code == 302 and r.headers["location"].startswith("https://app.example.com/galdus/#/oauth?token=")
     token = parse_qs(r.headers["location"].split("?", 1)[1])["token"][0]
@@ -219,7 +219,11 @@ def test_google_drive_connector_import_and_resync(client, monkeypatch):
     assert client.post("/api/v1/connectors/google_drive/authorize", headers=h).json()["url"].startswith("https://accounts.google.com/")
     state = state_for("google", "connect", k="google_drive", o=org, u=me["id"])
     r = client.get("/api/v1/connectors/google/callback", params={"code": "c", "state": state}, follow_redirects=False)
-    assert r.headers["location"].endswith("#/integrations?connected=google_drive")
+    # The callback only hands the code to the console; the signed-in session finishes the connection.
+    assert r.status_code == 302 and "#/integrations?connect_provider=google&code=c&state=" in r.headers["location"]
+    assert client.get("/api/v1/connectors", headers=h).json()["connections"] == []
+    done = client.post("/api/v1/connectors/google/complete", headers=h, json={"code": "c", "state": state})
+    assert done.status_code == 201, done.text
     listing = client.get("/api/v1/connectors", headers=h).json()
     cid = listing["connections"][0]["id"]
     assert listing["connections"][0]["account_email"] == "drive@example.com"

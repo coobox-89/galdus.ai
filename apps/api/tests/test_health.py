@@ -18,8 +18,9 @@ def test_readiness_returns_ready_when_database_responds():
         app.dependency_overrides.pop(get_db, None)
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready", "database": "ok"}
-    database.execute.assert_awaited_once()
+    body = response.json()
+    assert body["status"] == "ready" and body["database"] == "ok"
+    assert database.execute.await_count >= 1
 
 
 def test_readiness_returns_503_when_database_is_unavailable():

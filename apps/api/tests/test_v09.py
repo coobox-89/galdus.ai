@@ -101,6 +101,17 @@ def test_profile_and_avatar(client):
 def test_shared_rate_limit(client, monkeypatch):
     from sqlalchemy import text  # noqa: F401
     monkeypatch.setattr(settings, "rate_limit_backend", "postgres")
+    # A NullPool session per call: the app's pooled engine is bound to another event loop in tests,
+    # and the shared limiter fails open (allows) when the database errors.
+    import app.db as app_db
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
+    from tests.test_integration import DB_URL as url
+    monkeypatch.setattr(app_db, "SessionLocal", async_sessionmaker(create_async_engine(url, poolclass=NullPool), expire_on_commit=False))
+    import time
+    from datetime import datetime
+    if datetime.now().second > 50:  # fixed one-minute windows: do not straddle a boundary
+        time.sleep(61 - datetime.now().second)
     codes = [client.post("/api/v1/auth/mfa/verify", json={"mfa_token": "x" * 20, "code": "123456"},
                          headers={"X-Forwarded-For": "203.0.113.9"}).status_code for _ in range(12)]
     assert 429 in codes and codes.count(401) <= 10

@@ -149,6 +149,7 @@ export function ChatPage({ go }) {
 
   return (
     <div className="chat2">
+      <h1 className="sr-only">Chat</h1>
       <aside className="convs" aria-label="Conversations">
         <button type="button" className="btn block" onClick={fresh}><Plus size={16} /> New chat</button>
         <label className="field" style={{ position: 'relative' }}><span className="sr-only">Search chats</span>

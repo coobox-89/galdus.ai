@@ -42,7 +42,7 @@ async def setup():
             {"id": "github", "enabled": configured("github"), "env": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
              "redirect_uris": [redirect_uri("github", "login")]},
             {"id": "microsoft", "enabled": configured("microsoft"), "env": ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_TENANT"],
-             "redirect_uris": [redirect_uri("microsoft", "connect")]},
+             "redirect_uris": [redirect_uri("microsoft", "login"), redirect_uri("microsoft", "connect")]},
             {"id": "email", "enabled": email_enabled(), "env": ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"]},
             {"id": "scheduler", "enabled": bool(settings.automation_token), "env": ["AUTOMATION_TOKEN"], "github_secret": "GALDUS_AUTOMATION_TOKEN"},
         ],

@@ -6,6 +6,7 @@ pinger) calls POST /api/v1/automation/tick with the AUTOMATION_TOKEN secret.
 """
 import hashlib
 import hmac
+import json
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -268,11 +269,18 @@ async def webhook(token: str, request: Request, db: AsyncSession = Depends(get_d
     a = await db.scalar(select(Automation).where(Automation.webhook_token_hash == _hash(token)))
     if not a or not a.enabled:
         raise HTTPException(status_code=404, detail="Not found")
+    # Each automation runs a model call: cap it whatever the caller's IP.
+    await enforce(f"hook-automation:{a.id}", 10)
+    raw = await request.body()
     try:
-        payload = await request.json()
-    except Exception:
-        payload = {}
-    body = HookIn.model_validate(payload if isinstance(payload, dict) else {})
+        payload = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        raise HTTPException(status_code=400, detail="The body must be JSON, for example {\"input\": \"...\"}")
+    from pydantic import ValidationError
+    try:
+        body = HookIn.model_validate(payload if isinstance(payload, dict) else {})
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="input must be a string of at most 20,000 characters")
     run = await run_automation(db, a, "webhook", body.input or "")
     if not run:
         raise HTTPException(status_code=409, detail="Automation is disabled")

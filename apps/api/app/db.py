@@ -24,7 +24,8 @@ def engine_options() -> dict:
     }
 
 
-engine = create_async_engine(settings.database_url, **engine_options())
+# hide_parameters: SQL errors in logs never include the bound values (emails, content).
+engine = create_async_engine(settings.database_url, hide_parameters=True, **engine_options())
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 

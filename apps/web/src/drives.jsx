@@ -12,10 +12,19 @@ export function CloudDrives() {
   const [browsing, setBrowsing] = useState(null);
   const load = useCallback(() => ws.call('/v1/connectors').then(setData).catch(ws.onError), [ws]);
   useEffect(() => {
-    load();
     const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    if (q.get('connected')) ws.toast('Cloud drive connected. You can now import files.');
+    const provider = q.get('connect_provider');
+    if (provider || q.get('error')) history.replaceState(null, '', `${window.location.pathname}#/integrations`);
     if (q.get('error')) ws.toast(q.get('error'), 'error');
+    if (provider && q.get('code') && q.get('state')) {
+      // The provider sent the browser back: finish the connection with this session, so it lands in this workspace.
+      ws.call(`/v1/connectors/${encodeURIComponent(provider)}/complete`, { method: 'POST', body: { code: q.get('code'), state: q.get('state') } })
+        .then(() => ws.toast('Cloud drive connected. You can now import files.'))
+        .catch(ws.onError)
+        .finally(load);
+    } else {
+      load();
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function connect(kind) {

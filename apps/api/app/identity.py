@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime, timezone
 import jwt
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -11,7 +12,7 @@ from .auth import create_access_token, decode_access_claims, hash_password, veri
 from .config import settings
 from .db import get_db
 from .models import Membership, Organization, User
-from .ratelimit import auth_rate_limit
+from .ratelimit import auth_rate_limit, login_failures
 
 router = APIRouter(prefix="/api/v1/auth", tags=["identity"])
 bearer = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -50,6 +51,14 @@ class UserResponse(BaseModel):
     email_verification_pending: bool = False
     mfa_enabled: bool = False
     avatar: str | None = None
+    # First-run tour: pending (show it), completed or skipped.
+    onboarding: str = "pending"
+
+
+class RegisterPending(BaseModel):
+    """Returned instead of a session when the address must be confirmed first (REQUIRE_EMAIL_VERIFICATION)."""
+    verification_required: bool = True
+    email: EmailStr
 
 
 class TokenResponse(BaseModel):
@@ -107,6 +116,16 @@ async def current_membership(
     return membership
 
 
+def grant_admin_if_listed(user: User) -> None:
+    """ADMIN_EMAILS grants the platform console, but in production only to an address that is proven:
+    verified by email, by the reset link or by Google/GitHub. Otherwise anyone could register the
+    listed address first and become platform admin. Outside production it applies on registration."""
+    if user.email.lower() not in settings.admin_email_list:
+        return
+    if user.email_verified_at is not None or not settings.is_production:
+        user.is_platform_admin = True
+
+
 def make_slug(name: str) -> str:
     base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:60] or "workspace"
     return f"{base}-{uuid.uuid4().hex[:8]}"
@@ -117,7 +136,7 @@ def _user_response(user: User) -> UserResponse:
     verified = user.email_verified_at is not None
     return UserResponse(id=user.id, email=user.email, full_name=user.full_name, is_platform_admin=bool(user.is_platform_admin),
                         email_verified=verified, email_verification_pending=not verified and email_enabled(),
-                        mfa_enabled=bool(user.mfa_enabled), avatar=user.avatar)
+                        mfa_enabled=bool(user.mfa_enabled), avatar=user.avatar, onboarding=user.onboarding_status or "pending")
 
 
 def session_or_mfa(user: User) -> dict:
@@ -142,14 +161,33 @@ def _token_response(user: User) -> TokenResponse:
     )
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201, dependencies=[Depends(auth_rate_limit)])
+def _verification_first() -> bool:
+    from .mailer import email_enabled
+    return settings.require_email_verification and email_enabled()
+
+
+@router.post("/register", status_code=201, dependencies=[Depends(auth_rate_limit)],
+             responses={201: {"model": TokenResponse}, 202: {"model": RegisterPending}})
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    """Create an account and its first workspace.
+
+    With REQUIRE_EMAIL_VERIFICATION and SMTP configured, the answer is always 202 "check your inbox",
+    whether or not the address already has an account, so the endpoint cannot be used to find out who
+    is registered; the owner of an existing account gets a notice instead. Without email the API cannot
+    stay silent and answers 409 for a taken address (see docs/security/overview.md, residual risks).
+    """
+    from fastapi.responses import JSONResponse
     email = str(body.email).lower()
+    pending = JSONResponse(status_code=202, content=RegisterPending(email=email).model_dump(mode="json"))
     existing = await db.scalar(select(User).where(User.email == email))
     if existing:
+        if _verification_first():
+            from .accounts import notify_existing_account
+            await notify_existing_account(existing)
+            return pending
         raise HTTPException(status_code=409, detail="An account with this email already exists")
-    user = User(email=email, full_name=body.full_name, password_hash=hash_password(body.password),
-                is_platform_admin=email in settings.admin_email_list)
+    user = User(email=email, full_name=body.full_name, password_hash=hash_password(body.password))
+    grant_admin_if_listed(user)
     org = Organization(name=body.organization_name, slug=make_slug(body.organization_name))
     db.add_all([user, org])
     try:
@@ -159,21 +197,29 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     except IntegrityError:
         # Concurrent registration with the same email.
         await db.rollback()
+        if _verification_first():
+            return pending
         raise HTTPException(status_code=409, detail="An account with this email already exists")
     await db.refresh(user)
     from .accounts import send_verification
     await send_verification(db, user)
+    if _verification_first():
+        return pending
     return _token_response(user)
 
 
 @router.post("/login", dependencies=[Depends(auth_rate_limit)])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     email = str(body.email).lower()
+    # Checked before the password, and for unknown addresses too, so the lockout does not reveal accounts.
+    await login_failures.check(email)
     user = await db.scalar(select(User).where(User.email == email))
     if not user:
         verify_password(body.password, _DUMMY_HASH)
+        await login_failures.fail(email)
         raise _unauthorized("Invalid email or password")
     if not verify_password(body.password, user.password_hash):
+        await login_failures.fail(email)
         raise _unauthorized("Invalid email or password")
     from .mailer import email_enabled
     if settings.require_email_verification and email_enabled() and user.email_verified_at is None:
@@ -198,23 +244,54 @@ async def organizations(user: User = Depends(current_user), db: AsyncSession = D
 
 
 class DeleteAccountRequest(BaseModel):
-    password: str = Field(min_length=1, max_length=128)
+    # Accounts with a password confirm with it; accounts created with Google/GitHub/Microsoft type their email.
+    password: str | None = Field(default=None, max_length=128)
+    confirm_email: EmailStr | None = None
+
+
+def _iso(value) -> str | None:
+    return value.isoformat() if value else None
 
 
 @router.get("/export")
 async def export_account(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    """Return the personal data Galdus.ai stores about the caller (GDPR art. 15/20)."""
-    from .models import UsageEvent
+    """Return the personal data Galdus.ai stores about the caller (GDPR art. 15 and 20).
+
+    Workspace content that belongs to the organization (documents, agents, connections) is exported
+    by its owners; this file holds what is linked to the person. Secrets are never included.
+    """
+    from .models import ChatMessage, Conversation, Run, UsageEvent, UserIdentity
+    from .ratelimit import enforce
+    await enforce(f"export:{user.id}", 5)
     orgs = await organizations(user=user, db=db)
-    usage = (await db.execute(
-        select(UsageEvent).where(UsageEvent.user_id == user.id).order_by(UsageEvent.created_at)
-    )).scalars().all()
+    usage = (await db.execute(select(UsageEvent).where(UsageEvent.user_id == user.id).order_by(UsageEvent.created_at))).scalars().all()
+    identities = (await db.execute(select(UserIdentity).where(UserIdentity.user_id == user.id))).scalars().all()
+    convs = (await db.execute(select(Conversation).where(Conversation.user_id == user.id).order_by(Conversation.created_at))).scalars().all()
+    messages = (await db.execute(select(ChatMessage).join(Conversation, Conversation.id == ChatMessage.conversation_id)
+                                 .where(Conversation.user_id == user.id).order_by(ChatMessage.created_at))).scalars().all()
+    by_conv: dict = {}
+    for m in messages:
+        by_conv.setdefault(m.conversation_id, []).append(
+            {"role": m.role, "content": m.content, "attachments": m.attachments or [], "model": m.model, "created_at": _iso(m.created_at)})
+    runs = (await db.execute(select(Run).where(Run.user_id == user.id).order_by(Run.created_at))).scalars().all()
     return {
-        "user": {"id": str(user.id), "email": user.email, "full_name": user.full_name, "created_at": user.created_at.isoformat()},
+        "format": "galdus-account-export/2",
+        "exported_at": _iso(datetime.now(timezone.utc)),
+        "user": {"id": str(user.id), "email": user.email, "full_name": user.full_name, "created_at": _iso(user.created_at),
+                 "email_verified_at": _iso(user.email_verified_at), "mfa_enabled": bool(user.mfa_enabled),
+                 "has_password": bool(user.has_password), "has_avatar": bool(user.avatar),
+                 "custom_instructions": user.custom_instructions, "response_style": user.response_style,
+                 "onboarding": user.onboarding_status or "pending"},
+        "linked_sign_ins": [{"provider": i.provider, "email": i.email, "linked_at": _iso(i.created_at)} for i in identities],
         "organizations": [o.model_dump(mode="json") for o in orgs],
+        "conversations": [{"id": str(c.id), "organization_id": str(c.organization_id), "title": c.title, "persona": c.persona,
+                           "model": c.model, "created_at": _iso(c.created_at), "messages": by_conv.get(c.id, [])} for c in convs],
+        "runs": [{"id": str(r.id), "organization_id": str(r.organization_id), "agent_id": str(r.agent_id) if r.agent_id else None,
+                  "app_id": r.app_id, "trigger": r.trigger, "status": r.status, "input": r.input, "output": r.output,
+                  "model": r.model, "created_at": _iso(r.created_at)} for r in runs],
         "usage_events": [
             {"model": u.model, "prompt_tokens": u.prompt_tokens, "completion_tokens": u.completion_tokens,
-             "organization_id": str(u.organization_id), "created_at": u.created_at.isoformat()}
+             "organization_id": str(u.organization_id), "created_at": _iso(u.created_at)}
             for u in usage
         ],
     }
@@ -222,14 +299,34 @@ async def export_account(user: User = Depends(current_user), db: AsyncSession = 
 
 @router.post("/account/delete", status_code=204, dependencies=[Depends(auth_rate_limit)])
 async def delete_account(body: DeleteAccountRequest, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    """Delete the caller and every organization where they are the only member."""
+    """Delete the caller and every organization where they are the only member.
+
+    A workspace that has other members and where the caller is the only owner is not deleted silently:
+    the caller must first make someone else owner (409), so no team is left without an owner.
+    """
     from sqlalchemy import delete, func
-    if not verify_password(body.password, user.password_hash):
-        raise _unauthorized("Password is incorrect")
-    org_ids = (await db.execute(select(Membership.organization_id).where(Membership.user_id == user.id))).scalars().all()
-    for org_id in org_ids:
-        members = await db.scalar(select(func.count()).select_from(Membership).where(Membership.organization_id == org_id))
+    if user.has_password:
+        if not (body.password and verify_password(body.password, user.password_hash)):
+            raise _unauthorized("Password is incorrect")
+    elif not body.confirm_email or str(body.confirm_email).lower() != user.email.lower():
+        raise HTTPException(status_code=400, detail="Type your email address to confirm")
+    memberships = (await db.execute(select(Membership).where(Membership.user_id == user.id))).scalars().all()
+    blocked, solo = [], []
+    for m in memberships:
+        members = await db.scalar(select(func.count()).select_from(Membership).where(Membership.organization_id == m.organization_id))
         if members == 1:
-            await db.execute(delete(Organization).where(Organization.id == org_id))
+            solo.append(m.organization_id)
+            continue
+        if m.role == "owner":
+            owners = await db.scalar(select(func.count()).select_from(Membership).where(
+                Membership.organization_id == m.organization_id, Membership.role == "owner"))
+            if owners == 1:
+                org = await db.get(Organization, m.organization_id)
+                blocked.append(org.name if org else str(m.organization_id))
+    if blocked:
+        raise HTTPException(status_code=409, detail="You are the only owner of " + ", ".join(sorted(blocked))
+                            + ". Make another member owner in Team, then delete your account.")
+    for org_id in solo:
+        await db.execute(delete(Organization).where(Organization.id == org_id))
     await db.execute(delete(User).where(User.id == user.id))
     await db.commit()

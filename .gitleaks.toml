@@ -1,0 +1,7 @@
+# Secret scanning (CI job "secrets"). Run locally with: gitleaks git . --redact
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Obviously fake provider keys used as test fixtures (sk-or-v1-supersecretvalue9876, gsk_testkey..., sk-test-not-real)"
+paths = ['''apps/api/tests/.*\.py''']

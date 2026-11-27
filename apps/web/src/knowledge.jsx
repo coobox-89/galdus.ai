@@ -78,7 +78,7 @@ export function KnowledgePage() {
   return (
     <div className="stack">
       <PageHead title="Knowledge" actions={ws.canManage && !creating && ws.collections.length > 0 && <button type="button" className="btn ghost" onClick={() => setCreating(true)}>New collection</button>}>
-        Your documents, organised in collections. Agents and apps answer from them and cite the exact passage.
+        Your documents, organized in collections. Agents and apps answer from them and cite the exact passage.
       </PageHead>
       {(creating || ws.collections.length === 0) && (ws.canManage ? createForm : <Empty title="No collections yet">Ask a workspace admin to create one.</Empty>)}
       {col && !creating && <>
