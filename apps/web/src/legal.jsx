@@ -142,7 +142,10 @@ export function Terms() {
       <h2>9. Law and disputes</h2>
       <p>These terms are governed by Italian law. If you are a consumer, you may bring proceedings in the courts of your place of residence and you keep the protection of the mandatory rules of your country. Otherwise, the courts of Milan, Italy have jurisdiction.</p>
 
-      <h2>10. Contact</h2>
+      <h2>10. Trademarks</h2>
+      <p id="trademarks">OpenAI, Claude, Anthropic, Gemini, Mistral, DeepSeek, OpenRouter, Groq, Together AI, Fireworks AI, xAI, Ollama and all other product names, logos and brands mentioned in Galdus.ai are the property of their respective owners. Galdus.ai is an independent, open-source project. It is not affiliated with, sponsored by, endorsed by or otherwise connected to any of them. Third-party names and logos are used for identification purposes only, to indicate compatibility with their services.</p>
+
+      <h2>11. Contact</h2>
       <p>Questions about these terms: <Contact />.</p>
     </Page>
   );

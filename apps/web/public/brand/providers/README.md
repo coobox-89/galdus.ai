@@ -1,7 +1,12 @@
 # Provider logos
 
-Galdus does not ship third-party logos. To show the official mark of a model provider, download it from that
-provider's brand or press kit and save it here as an SVG named after the provider id:
+These files are the official marks of the model providers, used only to show which services Galdus.ai can connect to.
+They remain the property of their respective owners and are **not** covered by the project's AGPL-3.0 license.
+Galdus.ai is not affiliated with, sponsored by or endorsed by any of these companies.
+
+The console uses each shape as a mask and recolours it in Cloud White on a Blue Night tile (Lime on hover), so the
+original colours are not shown. Raster logos were traced to single-colour SVG; only the symbol is used where the
+original included a wordmark.
 
 | File | Provider |
 |:--|:--|
@@ -12,12 +17,11 @@ provider's brand or press kit and save it here as an SVG named after the provide
 | `deepseek.svg` | DeepSeek |
 | `openrouter.svg` | OpenRouter |
 | `groq.svg` | Groq |
-| `together_ai.svg` | Together AI |
 | `fireworks_ai.svg` | Fireworks AI |
 | `xai.svg` | xAI |
 | `ollama.svg` | Ollama |
-| `openai_compatible.svg` | Any OpenAI-compatible server (optional, a generic icon) |
+| `together_ai.svg` | Together AI (missing: a monogram is shown until the symbol is added) |
+| `openai_compatible.svg` | Any OpenAI-compatible server (optional, generic icon) |
 
-Use the symbol (icon-only) version on a transparent background. The console uses the shape as a mask and
-recolours it in Cloud White on a Blue Night tile with the provider's accent, so the original colours do not matter.
-Check each provider's brand guidelines before publishing. Without a file, a monogram is shown.
+Check each provider's brand guidelines before changing these files. If a provider asks for its mark to be removed,
+delete the file: the console falls back to a monogram.

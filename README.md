@@ -131,4 +131,8 @@ Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) fi
 
 GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) and the [license compliance notes](docs/license-compliance.md). Third-party components keep their own licenses.
 
+## Trademarks
+
+OpenAI, Claude, Anthropic, Gemini, Mistral, DeepSeek, OpenRouter, Groq, Together AI, Fireworks AI, xAI, Ollama and all other product names, logos and brands mentioned are the property of their respective owners. Galdus.ai is an independent, open-source project. It is not affiliated with, sponsored by, endorsed by or otherwise connected to any of them. Third-party names and logos are used for identification purposes only, to indicate compatibility with their services. Provider logos in [`apps/web/public/brand/providers`](apps/web/public/brand/providers) are excluded from the AGPL-3.0 license and remain the property of their owners.
+
 <p align="center"><br><img src="docs/assets/logo.svg" alt="" width="36"><br><sub><b>Galdus.ai</b> · Powered by you. Supercharged by AI.</sub></p>
