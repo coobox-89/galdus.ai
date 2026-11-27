@@ -3,7 +3,7 @@ import uuid
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from .auth import create_access_token, decode_access_token, hash_password, verify_password
@@ -18,6 +18,14 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=12, max_length=128)
     full_name: str = Field(min_length=1, max_length=160)
     organization_name: str = Field(min_length=2, max_length=160)
+
+    @field_validator("full_name", "organization_name")
+    @classmethod
+    def reject_blank_names(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("This field cannot be blank")
+        return value
 
 class LoginRequest(BaseModel):
     email: EmailStr
