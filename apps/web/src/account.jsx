@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Download, KeyRound, Sparkles, Trash2 } from 'lucide-react';
 import { useWs } from './workspace';
 import { PageHead } from './ui';
+import { ProfileCard, SecurityCard } from './profile';
 
 const STYLES = [['concise', 'Concise', 'Short answers, straight to the point.'], ['balanced', 'Balanced', 'The answer first, then what matters.'],
   ['detailed', 'Detailed', 'Thorough answers with steps and examples.']];
@@ -52,11 +53,12 @@ export function AccountPage({ go }) {
 
   return (
     <div className="stack">
-      <PageHead title="Account">{ws.user.full_name}, {ws.user.email}</PageHead>
+      <PageHead title="Account">Your profile, sign-in security and how Galdus answers you.</PageHead>
       {token && (
         <div className="secret-box"><b>You have been invited to a workspace</b>
           <span className="small muted">Accept to join it with the role chosen by the person who invited you.</span>
           <div><button type="button" className="btn" onClick={accept}>Accept invitation</button></div></div>)}
+      <ProfileCard />
       {prefs && (
         <form className="panel form" onSubmit={savePrefs}>
           <div className="panel-head"><div><h2 style={{ display: 'flex', gap: 10, alignItems: 'center' }}><Sparkles size={20} color="#B6FF00" /> Personalise your chat</h2>
@@ -75,6 +77,7 @@ export function AccountPage({ go }) {
           <div><button className="btn">Save preferences</button></div>
         </form>)}
       <div className="cols">
+        <SecurityCard />
         {prefs && (
           <form className="panel form" onSubmit={changePw}>
             <h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><KeyRound size={17} /> {prefs.has_password ? 'Change password' : 'Set a password'}</h3>

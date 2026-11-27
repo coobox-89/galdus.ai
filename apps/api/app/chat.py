@@ -68,7 +68,7 @@ def _split(v: str) -> list[str]:
 
 async def resolve_call(db: AsyncSession, membership: Membership, connection_id=None, model: str | None = None) -> tuple[str, dict]:
     """Pick credentials and enforce limits for a model call. Returns (label, litellm kwargs)."""
-    enforce(f"chat:{membership.user_id}", settings.rate_limit_chat_per_minute)
+    await enforce(f"chat:{membership.user_id}", settings.rate_limit_chat_per_minute)
     await enforce_workspace_limit(db, membership)
     if connection_id:
         conn = await get_connection(db, membership, connection_id)

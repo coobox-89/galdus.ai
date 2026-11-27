@@ -29,6 +29,10 @@ function consumeOAuthFragment() {
   const [path, query] = window.location.hash.replace(/^#\/?/, '').split('?');
   if (path !== 'oauth') return { error: '' };
   const params = new URLSearchParams(query || '');
+  if (params.get('mfa_token')) {
+    history.replaceState(null, '', window.location.pathname + '#/home');
+    return { error: '', mfaToken: params.get('mfa_token') };
+  }
   const token = params.get('token');
   if (token) {
     sessionStorage.setItem(TOKEN_KEY, token);
@@ -39,11 +43,26 @@ function consumeOAuthFragment() {
 }
 const OAUTH = consumeOAuthFragment();
 
+// #/verify?token=… from the confirmation email.
+const VERIFY = (() => {
+  const [path, query] = window.location.hash.replace(/^#\/?/, '').split('?');
+  if (path !== 'verify') return null;
+  history.replaceState(null, '', window.location.pathname + '#/home');
+  return new URLSearchParams(query || '').get('token');
+})();
+
 function App() {
   const toast = useToast();
   const [token, setToken] = useState(loadToken);
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState(OAUTH.error);
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!VERIFY) return;
+    api('/v1/auth/verify-email', { method: 'POST', body: { token: VERIFY } })
+      .then(() => { setNotice('Email confirmed. Thank you!'); toast('Email confirmed. Thank you!'); setUser(u => (u ? { ...u, email_verified: true, email_verification_pending: false } : u)); })
+      .catch(err => { setMessage(err.message); toast(err.message, 'warn'); });
+  }, [toast]);
   const resetToken = window.location.hash.startsWith('#/reset') ? new URLSearchParams(window.location.hash.split('?')[1] || '').get('token') : null;
 
   const clear = useCallback(note => {
@@ -71,10 +90,10 @@ function App() {
     setToken(data.access_token);
   }
 
-  if (!token) return <Landing onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} resetToken={resetToken} />;
+  if (!token) return <Landing onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} resetToken={resetToken} mfaToken={OAUTH.mfaToken} notice={notice} />;
   if (!user) return null;
   return (
-    <WorkspaceProvider token={token} user={user} onExpired={expire}
+    <WorkspaceProvider token={token} user={user} setUser={setUser} onExpired={expire}
       onToken={data => { sessionStorage.setItem(TOKEN_KEY, data.access_token); sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + data.expires_in * 1000)); setToken(data.access_token); }}
       onSignOut={note => clear(note)}>
       <Shell onLogout={note => clear(typeof note === 'string' ? note : '')} />

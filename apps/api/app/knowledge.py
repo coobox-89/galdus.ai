@@ -201,7 +201,7 @@ async def ingest(db: AsyncSession, membership: Membership, col: KnowledgeCollect
 @router.post("/collections/{collection_id}/documents/text", response_model=DocumentOut, status_code=201)
 async def add_text(collection_id: uuid.UUID, body: TextDocument, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     require_manager(membership)
-    enforce(f"ingest:{membership.user_id}", 30)
+    await enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
     return await ingest(db, membership, col, body.title.strip(), body.content, "text")
 
@@ -210,7 +210,7 @@ async def add_text(collection_id: uuid.UUID, body: TextDocument, membership: Mem
 async def upload(collection_id: uuid.UUID, file: UploadFile = File(...), title: str | None = Form(default=None),
                  membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     require_manager(membership)
-    enforce(f"ingest:{membership.user_id}", 30)
+    await enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
     data = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
@@ -228,7 +228,7 @@ async def add_url(collection_id: uuid.UUID, body: UrlDocument, membership: Membe
     """Import the readable text of a public web page."""
     require_manager(membership)
     from .tools import fetch_public_text
-    enforce(f"ingest:{membership.user_id}", 30)
+    await enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
     title, content = await fetch_public_text(body.url.strip())
     return await ingest(db, membership, col, title, content, "web")
@@ -275,5 +275,5 @@ async def retrieve(db: AsyncSession, membership: Membership, collection_id: uuid
 
 @router.post("/collections/{collection_id}/search")
 async def search(collection_id: uuid.UUID, body: SearchRequest, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
-    enforce(f"search:{membership.user_id}", 60)
+    await enforce(f"search:{membership.user_id}", 60)
     return await retrieve(db, membership, collection_id, body.query, body.k)

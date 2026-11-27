@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { Bot, BookOpen, Cpu, LayoutDashboard, LayoutGrid, LogOut, Menu, MessageSquare, Plug, Search, ShieldCheck, UserCog, Users, Workflow } from 'lucide-react';
+import { Bot, BookOpen, Cpu, LayoutDashboard, LayoutGrid, LogOut, Menu, MessageSquare, Plug, Search, ShieldCheck, UserCog, Users, Workflow, MailCheck } from 'lucide-react';
 import { Aurora, Mark, Wordmark } from './brand';
 import { useWs } from './workspace';
 import { Select } from './select';
@@ -14,6 +14,7 @@ import { ModelsPage } from './models';
 import { IntegrationsPage } from './integrations';
 import { TeamPage } from './team';
 import { AdminPage } from './admin';
+import { Avatar } from './profile';
 import { AccountPage } from './account';
 
 export const NAV = [
@@ -70,7 +71,6 @@ export function Shell({ onLogout }) {
   }, []);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [route]);
 
-  const initials = (ws.user?.full_name || '?').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <div className="shell">
@@ -105,7 +105,7 @@ export function Shell({ onLogout }) {
         <div className="sidebar-foot">
           <button type="button" className="kbd-hint" onClick={() => setPalette(true)}><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Search size={14} /> Go to…</span> <span><kbd>Ctrl</kbd> <kbd>K</kbd></span></button>
           <div className="user-chip">
-            <span className="avatar">{initials}</span>
+            <Avatar user={ws.user} size={32} />
             <div><b>{ws.user?.full_name}</b><small>{ws.user?.email}</small></div>
           </div>
           <button type="button" className="btn ghost sm" onClick={onLogout}><LogOut size={15} /> Sign out</button>
@@ -124,6 +124,7 @@ export function Shell({ onLogout }) {
             initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -6, filter: 'blur(4px)' }} transition={{ duration: .24, ease: [0.2, 0.8, 0.2, 1] }}
             style={route === 'chat' ? { maxWidth: 1320, paddingTop: 20, paddingBottom: 20 } : undefined}>
+            {ws.user?.email_verification_pending && <VerifyBanner />}
             {ws.organizationId ? <Page go={navigate} /> : null}
           </motion.main>
         </AnimatePresence>
@@ -162,5 +163,20 @@ function Palette({ nav, onPick, onClose }) {
         ))}</ul>
       </motion.div>
     </motion.div>
+  );
+}
+
+function VerifyBanner() {
+  const ws = useWs();
+  const [sent, setSent] = React.useState(false);
+  async function resend() {
+    try { await ws.call('/v1/auth/verify-email/resend', { method: 'POST' }); setSent(true); } catch (err) { ws.onError(err); }
+  }
+  return (
+    <div className="verify-banner" role="status">
+      <MailCheck size={18} />
+      <span>Confirm your email address: we sent a link to <b>{ws.user.email}</b>.</span>
+      <button type="button" className="btn ghost sm" disabled={sent} onClick={resend}>{sent ? 'Sent' : 'Send again'}</button>
+    </div>
   );
 }

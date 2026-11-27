@@ -141,7 +141,7 @@ async def delete_automation(automation_id: uuid.UUID, membership: Membership = D
 async def run_now(automation_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     """Run an automation once, now, to check it works (does not change its schedule)."""
     require_role(membership, "owner", "admin")
-    enforce(f"run-now:{membership.user_id}", 10)
+    await enforce(f"run-now:{membership.user_id}", 10)
     a = await db.scalar(select(Automation).where(Automation.id == automation_id, Automation.organization_id == membership.organization_id))
     if not a:
         raise HTTPException(status_code=404, detail="Automation not found in this workspace")
@@ -196,6 +196,16 @@ async def run_automation(db: AsyncSession, a: Automation, trigger: str, user_inp
     return run
 
 
+async def prune_retention(db: AsyncSession) -> None:
+    """Retention promised in the privacy policy: usage and audit records 24 months, expired one-time links."""
+    from sqlalchemy import text
+    for sql in ("delete from usage_events where created_at < now() - interval '24 months'",
+                "delete from audit_events where created_at < now() - interval '24 months'",
+                "delete from email_verifications where expires_at < now() - interval '7 days'",
+                "delete from password_resets where expires_at < now() - interval '7 days'"):
+        await db.execute(text(sql))
+
+
 @router.post("/automation/tick")
 async def tick(db: AsyncSession = Depends(get_db), authorization: str | None = Header(default=None)):
     expected = settings.automation_token
@@ -213,6 +223,10 @@ async def tick(db: AsyncSession = Depends(get_db), authorization: str | None = H
         run = await run_automation(db, a, "schedule")
         results.append({"automation_id": str(a.id), "status": run.status if run else "skipped"})
     synced = await sync_external_documents(db)
+    from .ratelimit import prune_shared
+    await prune_shared(db)
+    await prune_retention(db)
+    await db.commit()
     return {"ran": len(results), "results": results, "documents_synced": synced}
 
 
@@ -248,7 +262,7 @@ class HookIn(BaseModel):
 
 @router.post("/hooks/{token}")
 async def webhook(token: str, request: Request, db: AsyncSession = Depends(get_db)):
-    enforce(f"hook:{client_ip(request)}", 30)
+    await enforce(f"hook:{client_ip(request)}", 30)
     if len(token) < 20 or len(token) > 100:
         raise HTTPException(status_code=404, detail="Not found")
     a = await db.scalar(select(Automation).where(Automation.webhook_token_hash == _hash(token)))

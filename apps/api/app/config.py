@@ -67,12 +67,17 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
 
+    # Block password sign-in until the email address is verified (only when SMTP is configured).
+    require_email_verification: bool = False
+
     # Shared secret for POST /api/v1/automation/tick (scheduler). Empty disables schedules.
     automation_token: str = ""
 
     # Rate limits (requests per window per client IP / user). In-process only:
     # run a single API instance or put a shared limiter in front for scale-out.
     rate_limit_enabled: bool = True
+    # memory: per instance. postgres: shared across every API instance through the database.
+    rate_limit_backend: str = "memory"
     rate_limit_auth_per_minute: int = 10
     rate_limit_chat_per_minute: int = 20
 
