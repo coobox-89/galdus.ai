@@ -4,10 +4,10 @@ Revisione per la produzione del 27 novembre 2026, branch `release/production-rea
 
 ## 1. Verdetto
 
-**Quasi pronto**: il codice è pronto e i passi di configurazione 1-6 e 13 sono completati (27 novembre 2026). Resta un solo passo bloccante, il 7: collegare almeno un modello, senza il quale chat, agenti, app e automazioni non rispondono. Fatto quello, il verdetto è "Pronto per la produzione" per l'anteprima a costo zero.
+**Quasi pronto**: il codice è pronto, i passi di configurazione 1-6 e 13 sono completati e la release candidate [v1.0.0-rc.1](https://github.com/coobox-89/galdus.ai/releases/tag/v1.0.0-rc.1) è pubblicata (27 novembre 2026). Resta un solo passo bloccante, il 7: collegare almeno un modello, senza il quale chat, agenti, app e automazioni non rispondono. Fatto quello, il verdetto è "Pronto per la produzione" per l'anteprima a costo zero.
 
 - Codice, test e documentazione: pronti. 147 test API, 18 test end-to-end, `pip-audit` e `npm audit` senza vulnerabilità, nessun segreto nella cronologia (gitleaks), nessuna violazione di accessibilità (axe, WCAG 2 AA) e console del browser pulita su tutte le pagine a 360, 768 e 1440 px.
-- Completati: password del database (`galdus_app` e `postgres`) ruotate e verificate sul database, `ENCRYPTION_KEY` salvata, deploy e `/readyz` controllati, password admin cambiata con verifica in due passaggi attiva, `LEGAL_EMAIL` impostata, DPA di Supabase e Render scaricati e archiviati, sito Netlify eliminato.
+- Completati: password del database (`galdus_app` e `postgres`) ruotate e verificate sul database, `ENCRYPTION_KEY` salvata, deploy e `/readyz` controllati, password admin cambiata con verifica in due passaggi attiva, `LEGAL_EMAIL` impostata, DPA di Supabase e Render scaricati e archiviati, sito Netlify eliminato, release candidate `v1.0.0-rc.1` pubblicata come pre-release (tag sul commit `e13465b` di `main`).
 - SMTP e OAuth non bloccano: senza di essi la registrazione funziona, ma non ci sono email (verifica, reset password, inviti via mail) né accesso con Google, GitHub o Microsoft.
 
 ## 2. Cosa ho fatto
@@ -51,7 +51,7 @@ Dettagli, esiti e rischi residui in [security/review-2026-11-27.md](security/rev
 
 ## 3. Cosa devi fare tu entro la prossima settimana
 
-Aggiornato: restano i passi 7-12, 14 e 15 (i numeri originali sono mantenuti perché la tabella qui sotto li cita). Il 7 è l'ultimo bloccante.
+Aggiornato: restano i passi 7-12 e 14, più la promozione a 1.0.0 del passo 15 (i numeri originali sono mantenuti perché la tabella qui sotto li cita). Il 7 è l'ultimo bloccante.
 
 In ordine di priorità. Non incollare mai i valori in chat: vanno solo nei pannelli dei servizi.
 
@@ -67,7 +67,7 @@ In ordine di priorità. Non incollare mai i valori in chat: vanno solo nei panne
 11. **Completa GitHub.** **Settings, General, Social preview, Edit, Upload** con `docs/assets/social-preview.png`. Nella pagina del repository, ingranaggio accanto ad **About**: descrizione, sito `https://coobox-89.github.io/galdus.ai/`, topic (ai, llm, self-hosted, fastapi, react). **Settings, Code security**: attiva **Private vulnerability reporting** e **Dependabot alerts**. In alto, **Watch, All activity** per ricevere gli avvisi `incident`.
 12. **Primo backup.** Dal tuo computer: `DATABASE_URL=... BACKUP_PASSPHRASE=... ./scripts/backup-db.sh ~/galdus-backups` ([OPERATIONS.md](OPERATIONS.md#backups)); salva la passphrase nel password manager.
 14. **Materiali grafici.** Fornisci il simbolo ufficiale di Together AI (SVG dal suo brand kit, da mettere in `apps/web/public/brand/providers/together_ai.svg`) e l'immagine del vichingo ad alta risoluzione (almeno 2500 px di larghezza, sorgente senza compressione) per sostituire le versioni attuali.
-15. **Pubblica la release candidate**, dopo il merge di questa modifica: GitHub, **Actions**, workflow **Release**, **Run workflow** sul branch `main`. Crea il tag `v1.0.0-rc.1` e la pagina Release (pre-release) con le note del CHANGELOG; non fa deploy né riavvii. Dopo una settimana senza problemi: PR che porta la versione a `1.0.0`, merge, poi di nuovo **Run workflow** per `v1.0.0`.
+15. **Promuovi la versione a 1.0.0.** La release candidate [v1.0.0-rc.1](https://github.com/coobox-89/galdus.ai/releases/tag/v1.0.0-rc.1) è già pubblicata. Dopo circa una settimana di uso senza problemi: PR che porta la versione a `1.0.0` (codice e CHANGELOG), merge, poi GitHub, **Actions**, workflow **Release**, **Run workflow** su `main` per pubblicare `v1.0.0`. Non fa deploy né riavvii.
 
 Facoltativo: `RATE_LIMIT_BACKEND=postgres` su Render per non azzerare i blocchi a ogni riavvio.
 
