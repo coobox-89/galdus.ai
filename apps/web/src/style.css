@@ -394,3 +394,34 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
   .persona-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .aurora i, .auth-card::before { animation: none; } }
+
+/* ---- Landing v3: Viking scene ------------------------------------------------- */
+.landing.v3 { grid-template-columns: minmax(0, 1fr) minmax(380px, 460px); }
+.viking { position: absolute; inset: 0 auto 0 0; width: min(74vw, 1180px); z-index: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 100%), linear-gradient(0deg, transparent 0%, #000 22%);
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, #000 62%, transparent 100%); }
+.viking svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.viking .snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.landing.v3 .landing-hero { justify-content: space-between; }
+.landing.v3 .hero-body { margin: auto 0 0; padding: 0 0 28px; max-width: 640px; position: relative; }
+.landing.v3 .hero-body::before { content: ''; position: absolute; inset: -60px -80px -20px -120px; z-index: -1;
+  background: radial-gradient(60% 70% at 30% 70%, rgba(11, 31, 59, .92), rgba(11, 31, 59, .55) 55%, transparent 80%); }
+.landing.v3 h1 .line { display: block; white-space: nowrap; }
+.landing.v3 h1 { font-size: clamp(2.3rem, 4.3vw, 4.3rem); line-height: .98; letter-spacing: -.04em; text-shadow: 0 10px 40px rgba(4, 12, 26, .6); }
+.landing.v3 .lead { margin: 20px 0 22px; }
+.cap-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-width: 600px; }
+.cap-chips li { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  background: rgba(11, 31, 59, .72); backdrop-filter: blur(8px); border: 1px solid rgba(182, 255, 0, .28); color: var(--cloud); }
+.cap-chips li svg { color: var(--lime); }
+.landing.v3 .landing-auth { background: linear-gradient(90deg, transparent, rgba(7, 21, 48, .55) 30%); }
+.btn.oauth img { flex: none; }
+@media (max-width: 900px) {
+  .landing.v3 { grid-template-columns: 1fr; }
+  .viking { position: relative; width: 100%; height: 56vh; -webkit-mask-image: linear-gradient(0deg, transparent 0%, #000 30%); mask-image: linear-gradient(0deg, transparent 0%, #000 30%); }
+  .landing.v3 .landing-hero { position: absolute; top: 0; left: 0; right: 0; height: 56vh; padding: 20px; }
+  .landing.v3 .hero-body { padding-bottom: 0; }
+  .landing.v3 h1 { font-size: 2.4rem; }
+  .landing.v3 .lead, .cap-chips, .landing.v3 .landing-foot { display: none; }
+  .landing.v3 h1 { font-size: 2.1rem; }
+  .landing.v3 .landing-auth { background: none; padding-top: 12px; }
+}
