@@ -412,16 +412,16 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 .arm-glow { position: absolute; inset: 0; mix-blend-mode: screen; background: radial-gradient(14% 18% at 55% 75%, rgba(182, 255, 0, .42), transparent 70%); animation: armPulse 3.2s ease-in-out infinite; }
 .arm-sweep { position: absolute; inset: 0; mix-blend-mode: screen; background: linear-gradient(125deg, transparent 44%, rgba(228, 255, 107, .6) 50%, transparent 56%); background-size: 300% 300%; animation: armSweep 3.8s cubic-bezier(.6, 0, .4, 1) infinite; }
 /* Face paint: effects live inside the exact shape of the paint (alpha mask), so they move with the skin. */
-.paint { position: absolute; left: 53.41%; top: 3.93%; width: 5.20%; height: 17.53%;
+.paint { position: absolute; left: 53.05%; top: 6.38%; width: 10.29%; height: 9.78%;
   -webkit-mask: var(--pm) center / 100% 100% no-repeat; mask: var(--pm) center / 100% 100% no-repeat; }
 .paint i { position: absolute; inset: 0; }
-/* a wet sheen that travels down the stroke, following the face from brow to cheek */
-.paint-sheen { mix-blend-mode: soft-light; background: linear-gradient(172deg, transparent 0%, transparent 38%, rgba(255, 255, 255, .6) 48%, rgba(255, 255, 255, .3) 52%, transparent 62%, transparent 100%);
-  background-size: 100% 320%; background-position: 0 100%; animation: paintSheen 6.5s cubic-bezier(.45, 0, .2, 1) infinite 2.2s; }
+/* light catching the pigment dust, travelling along the finger smear from temple to nose */
+.paint-sheen { mix-blend-mode: soft-light; background: linear-gradient(105deg, transparent 0%, transparent 40%, rgba(255, 255, 255, .7) 49%, rgba(255, 255, 255, .35) 53%, transparent 62%, transparent 100%);
+  background-size: 320% 100%; background-position: 100% 0; animation: paintSheen 6.5s cubic-bezier(.45, 0, .2, 1) infinite 2.2s; }
 /* the pigment charges up like the arm, a slow breath of lime light */
-.paint-glow { mix-blend-mode: screen; background: radial-gradient(90% 55% at 40% 45%, rgba(182, 255, 0, .55), rgba(182, 255, 0, .12) 60%, transparent 100%);
+.paint-glow { mix-blend-mode: screen; background: radial-gradient(60% 90% at 45% 50%, rgba(182, 255, 0, .5), rgba(182, 255, 0, .12) 60%, transparent 100%);
   opacity: 0; animation: paintGlow 6.5s ease-in-out infinite 2.2s; }
-@keyframes paintSheen { 0% { background-position: 0 100%; } 55%, 100% { background-position: 0 0%; } }
+@keyframes paintSheen { 0% { background-position: 100% 0; } 55%, 100% { background-position: 0% 0; } }
 @keyframes paintGlow { 0%, 100% { opacity: 0; } 30% { opacity: .55; } 60% { opacity: .15; } }
 @keyframes armPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes armSweep { 0% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
