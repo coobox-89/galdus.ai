@@ -9,6 +9,9 @@ PROD = dict(
     cors_origins="https://galdus.netlify.app",
     database_url="postgresql+asyncpg://app:pw@db.example.com:5432/postgres?ssl=require",
     litellm_model="openai/gpt-4o-mini",
+    encryption_key="k" * 40,
+    public_api_url="https://api.galdus.example",
+    frontend_url="https://app.galdus.example",
 )
 
 
@@ -26,6 +29,19 @@ def test_valid_production_settings():
         ("cors_origins", "*"),
         ("cors_origins", "http://galdus.example.com"),
         ("database_url", "postgresql+asyncpg://galdus:galdus_dev_only@db:5432/galdus"),
+        # Phase 1 review: production must refuse missing, placeholder or development values.
+        ("encryption_key", ""),
+        ("encryption_key", "short"),
+        ("encryption_key", "x" * 48),  # same as JWT_SECRET
+        ("jwt_secret", "replace-with-at-least-32-random-characters"),
+        ("jwt_secret", "ci-only-secret-with-at-least-32-characters"),
+        ("encryption_key", "replace-with-at-least-32-random-characters"),
+        ("public_api_url", "http://localhost:8000"),
+        ("frontend_url", "http://localhost:5173"),
+        ("frontend_url", "http://app.galdus.example"),
+        ("smtp_host", "smtp.example.com"),  # without SMTP_FROM
+        ("rate_limit_backend", "redis"),
+        ("rate_limit_enabled", False),
     ],
 )
 def test_production_rejects_unsafe_settings(field, value):

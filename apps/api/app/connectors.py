@@ -74,33 +74,44 @@ async def authorize(kind: str, membership: Membership = Depends(current_membersh
 
 
 @router.get("/{provider}/callback")
-async def callback(provider: str, code: str | None = None, state: str | None = None, error: str | None = None,
+async def callback(provider: str, code: str | None = None, state: str | None = None, error: str | None = None):
+    """The provider sends the browser back here. Nothing is stored yet: the code goes to the console,
+    which finishes the connection with the signed-in person's session (POST .../complete). That binds the
+    drive to whoever started the flow, so a consent link sent to someone else cannot attach their drive
+    to another workspace."""
+    if error or not code or not state or provider not in {v["oauth"] for v in KINDS.values()}:
+        return RedirectResponse(_front(f"integrations?error={quote('The connection was cancelled.')}"), status_code=302)
+    return RedirectResponse(_front(f"integrations?connect_provider={quote(provider)}&code={quote(code)}&state={quote(state)}"),
+                            status_code=302)
+
+
+class CompleteIn(BaseModel):
+    code: str = Field(min_length=1, max_length=4000)
+    state: str = Field(min_length=10, max_length=8000)
+
+
+@router.post("/{provider}/complete", status_code=201)
+async def complete(provider: str, body: CompleteIn, membership: Membership = Depends(current_membership),
                    db: AsyncSession = Depends(get_db)):
-    try:
-        if error or not code or not state:
-            raise HTTPException(status_code=400, detail="The connection was cancelled.")
-        data = read_state(state)
-        kind = data.get("k")
-        if data.get("purpose") != "connect" or KINDS.get(kind, {}).get("oauth") != provider:
-            raise HTTPException(status_code=400, detail="Invalid connection state.")
-        membership = await db.scalar(select(Membership).where(Membership.organization_id == uuid.UUID(data["o"]),
-                                                              Membership.user_id == uuid.UUID(data["u"])))
-        if not membership or membership.role not in ("owner", "admin"):
-            raise HTTPException(status_code=403, detail="You can no longer manage this workspace.")
-        tokens = await exchange_code(provider, "connect", code, data)
-        email = await _account_email(kind, tokens["access_token"])
-        c = CloudConnection(organization_id=membership.organization_id, provider=kind, account_email=email,
-                            refresh_token_encrypted=encrypt(tokens["refresh_token"]) if tokens.get("refresh_token") else None,
-                            access_token_encrypted=encrypt(tokens["access_token"]),
-                            expires_at=datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)) - 60),
-                            created_by=membership.user_id)
-        db.add(c)
-        await db.flush()
-        await audit(db, membership, "connector.connected", "cloud_connection", c.id, provider=kind, account=email)
-        await db.commit()
-    except HTTPException as exc:
-        return RedirectResponse(_front(f"integrations?error={quote(str(exc.detail))}"), status_code=302)
-    return RedirectResponse(_front(f"integrations?connected={kind}"), status_code=302)
+    data = read_state(body.state)
+    kind = data.get("k")
+    if data.get("purpose") != "connect" or KINDS.get(kind, {}).get("oauth") != provider:
+        raise HTTPException(status_code=400, detail="Invalid connection state.")
+    if data.get("u") != str(membership.user_id) or data.get("o") != str(membership.organization_id):
+        raise HTTPException(status_code=403, detail="This connection was started by another account or workspace. Start it again from Integrations.")
+    require_role(membership, "owner", "admin")
+    tokens = await exchange_code(provider, "connect", body.code, data)
+    email = await _account_email(kind, tokens["access_token"])
+    c = CloudConnection(organization_id=membership.organization_id, provider=kind, account_email=email,
+                        refresh_token_encrypted=encrypt(tokens["refresh_token"]) if tokens.get("refresh_token") else None,
+                        access_token_encrypted=encrypt(tokens["access_token"]),
+                        expires_at=datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)) - 60),
+                        created_by=membership.user_id)
+    db.add(c)
+    await db.flush()
+    await audit(db, membership, "connector.connected", "cloud_connection", c.id, provider=kind, account=email)
+    await db.commit()
+    return out(c)
 
 
 async def _account_email(kind: str, token: str) -> str:

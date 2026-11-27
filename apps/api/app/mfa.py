@@ -1,7 +1,7 @@
 """Two-step verification with an authenticator app (TOTP, RFC 6238) and single-use recovery codes.
 
 Off by default: each person turns it on from their account. Once on, every sign-in (password,
-Google or GitHub) needs a 6-digit code or a recovery code.
+Google, GitHub or Microsoft) needs a 6-digit code or a recovery code.
 """
 import base64
 import hashlib
@@ -22,7 +22,7 @@ from .crypto import decrypt, encrypt
 from .db import get_db
 from .identity import _token_response, current_user
 from .models import User
-from .ratelimit import client_ip, enforce
+from .ratelimit import client_ip, enforce, mfa_failures
 
 router = APIRouter(prefix="/api/v1/auth/mfa", tags=["mfa"])
 
@@ -121,8 +121,11 @@ async def verify(body: Verify, request: Request, db: AsyncSession = Depends(get_
     except (jwt.InvalidTokenError, ValueError):
         raise HTTPException(status_code=401, detail="This sign-in step expired. Sign in again.")
     await enforce(f"mfa-user:{user_id}", 5)
+    # 6-digit codes: besides 5 tries a minute, at most MFA_MAX_FAILURES wrong codes per lockout window.
+    await mfa_failures.check(str(user_id))
     user = await db.scalar(select(User).where(User.id == user_id))
     if not user or not check_second_factor(user, body.code):
+        await mfa_failures.fail(str(user_id))
         raise HTTPException(status_code=401, detail="That code is not valid. Check the time on your phone or use a recovery code.")
     await db.commit()
     return _token_response(user)
@@ -165,7 +168,9 @@ async def enable(body: Code, user: User = Depends(current_user), db: AsyncSessio
 @router.post("/recovery-codes")
 async def regenerate(body: Code, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     await enforce(f"mfa-codes:{user.id}", 5)
+    await mfa_failures.check(str(user.id))
     if not check_second_factor(user, body.code):
+        await mfa_failures.fail(str(user.id))
         raise HTTPException(status_code=400, detail="That code is not valid")
     codes = new_recovery_codes()
     user.mfa_recovery = [_hash(c) for c in codes]
@@ -180,7 +185,9 @@ async def disable(body: Disable, user: User = Depends(current_user), db: AsyncSe
         return {"enabled": False}
     if user.has_password and not (body.password and verify_password(body.password, user.password_hash)):
         raise HTTPException(status_code=400, detail="Your password is not correct")
+    await mfa_failures.check(str(user.id))
     if not check_second_factor(user, body.code):
+        await mfa_failures.fail(str(user.id))
         raise HTTPException(status_code=400, detail="That code is not valid")
     user.mfa_enabled, user.mfa_secret, user.mfa_recovery, user.mfa_last_step = False, None, [], None
     await db.commit()

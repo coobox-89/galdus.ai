@@ -15,14 +15,16 @@ const FEATURES = [
   [ShieldCheck, 'Team governance', 'Roles, audit logs, usage limits and guardrails.'],
   [Code2, 'Open source', 'AGPL-3.0 and self-hostable. Your data stays where you put it.'],
 ];
-const LABEL = { google: 'Google', github: 'GitHub' };
+const LABEL = { google: 'Google', github: 'GitHub', microsoft: 'Microsoft' };
 const REPO = 'https://github.com/coobox-89/galdus.ai';
 
-// Official provider marks are not bundled: drop google.svg / github.svg from the
-// brand kits into apps/web/public/brand/ and they appear on the buttons.
+// Official sign-in marks are not bundled (they are third-party trademarks). To show one, add
+// google.svg, github.svg or microsoft.svg from the provider's brand kit to apps/web/public/brand/
+// and list its id here; until then a neutral icon is used and no request is made (no 404 in the console).
+const SIGN_IN_MARKS = new Set([]);
 function ProviderMark({ id }) {
-  const [ok, setOk] = useState(true);
-  if (!ok) return <LogIn size={17} />;
+  const [ok, setOk] = useState(SIGN_IN_MARKS.has(id));
+  if (!ok) return <LogIn size={17} aria-hidden="true" />;
   return <img src={`${BASE}/brand/${id}.svg`} alt="" width="20" height="20" onError={() => setOk(false)} />;
 }
 
@@ -60,6 +62,12 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
         const r = await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
           method: 'POST', body: registering ? form : { email: form.email, password: form.password } });
         if (r.mfa_required) { setMfaToken(r.mfa_token); setCode(''); setRecovery(false); setMode('mfa'); return; }
+        if (r.verification_required) {
+          // The server asks to confirm the address before the first sign-in (same answer for new and existing emails).
+          setMode('login'); setForm(f => ({ ...f, password: '' }));
+          setNote(`Check your inbox at ${r.email}: open the link we sent to confirm your address, then sign in.`);
+          return;
+        }
         onAuthenticated(r);
       }
     } catch (err) { setMessage(err.message); } finally { setBusy(false); }

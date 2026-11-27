@@ -101,6 +101,10 @@ def test_profile_and_avatar(client):
 def test_shared_rate_limit(client, monkeypatch):
     from sqlalchemy import text  # noqa: F401
     monkeypatch.setattr(settings, "rate_limit_backend", "postgres")
+    import time
+    from datetime import datetime
+    if datetime.now().second > 50:  # fixed one-minute windows: do not straddle a boundary
+        time.sleep(61 - datetime.now().second)
     codes = [client.post("/api/v1/auth/mfa/verify", json={"mfa_token": "x" * 20, "code": "123456"},
                          headers={"X-Forwarded-For": "203.0.113.9"}).status_code for _ in range(12)]
     assert 429 in codes and codes.count(401) <= 10

@@ -1,4 +1,4 @@
-"""Sign-in with Google/GitHub, password reset and change, chat preferences."""
+"""Sign-in with Google, GitHub and Microsoft, password reset and change, chat preferences."""
 import hashlib
 import re
 import hmac
@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .auth import create_access_token, hash_password, verify_password
 from .config import settings
 from .db import get_db
-from .identity import auth_rate_limit, current_user, make_slug
+from .identity import auth_rate_limit, current_user, grant_admin_if_listed, make_slug
 from .mailer import email_enabled, send
 from .models import EmailVerification, Membership, Organization, PasswordReset, User, UserIdentity
 from .oauth import PROVIDERS, authorize_url, configured, exchange_code, fetch_identity, read_state
@@ -24,7 +24,10 @@ from .ratelimit import client_ip, enforce
 OAUTH_COOKIE = "galdus_oauth"
 
 router = APIRouter(prefix="/api/v1/auth", tags=["accounts"])
-LOGIN_PROVIDERS = ("google", "github")
+LOGIN_PROVIDERS = ("google", "github", "microsoft")
+# Providers whose email claim is not proof of ownership (Microsoft lets tenant admins set any address):
+# they can create a new, unverified account but never take over an existing one by email.
+UNVERIFIED_EMAIL_PROVIDERS = ("microsoft",)
 RESET_HOURS = 1
 
 
@@ -46,7 +49,7 @@ async def oauth_start(provider: str, request: Request):
     await enforce(f"oauth:{client_ip(request)}", 20)
     if provider not in LOGIN_PROVIDERS:
         raise HTTPException(status_code=404, detail="Unknown provider")
-    extra = {"prompt": "select_account"} if provider == "google" else {}
+    extra = {"prompt": "select_account"} if provider in ("google", "microsoft") else {}
     # Bind the flow to this browser: the callback must come back with the same cookie (prevents login CSRF).
     nonce = secrets.token_urlsafe(24)
     url = authorize_url(provider, "login", PROVIDERS[provider]["login_scope"], extra_state={"n": _hash(nonce)}, extra_params=extra)
@@ -58,23 +61,39 @@ async def oauth_start(provider: str, request: Request):
 async def _login_user(db: AsyncSession, provider: str, ident: dict) -> User:
     identity = await db.scalar(select(UserIdentity).where(UserIdentity.provider == provider, UserIdentity.subject == ident["subject"]))
     if identity:
-        return await db.get(User, identity.user_id)
-    if not ident["email"] or not ident["verified"]:
-        raise HTTPException(status_code=400, detail="Your account has no verified email address with this provider.")
+        user = await db.get(User, identity.user_id)
+        if user is None:
+            raise HTTPException(status_code=400, detail="This sign-in is no longer linked to an account.")
+        return user
+    if not ident["subject"] or ident["subject"] == "None":
+        raise HTTPException(status_code=400, detail="The provider did not return an account identifier.")
+    if not ident["email"]:
+        raise HTTPException(status_code=400, detail="Your account has no email address with this provider.")
+    trusted = bool(ident["verified"]) and provider not in UNVERIFIED_EMAIL_PROVIDERS
     user = await db.scalar(select(User).where(User.email == ident["email"]))
+    if user and not trusted:
+        raise HTTPException(status_code=409, detail="An account with this email already exists. Sign in with your password "
+                                                    "or the provider you used before.")
+    if not user and provider not in UNVERIFIED_EMAIL_PROVIDERS and not ident["verified"]:
+        raise HTTPException(status_code=400, detail="Your account has no verified email address with this provider.")
+    created = False
     if not user:
         name = (ident["name"] or ident["email"].split("@")[0])[:160]
         user = User(email=ident["email"], full_name=name, password_hash=hash_password(secrets.token_urlsafe(32)), has_password=False,
-                    is_platform_admin=ident["email"] in settings.admin_email_list, email_verified_at=datetime.now(timezone.utc))
+                    email_verified_at=datetime.now(timezone.utc) if trusted else None)
         org_name = f"{name.split(' ')[0]}'s workspace"
         org = Organization(name=org_name, slug=make_slug(org_name))
         db.add_all([user, org])
         await db.flush()
         db.add(Membership(user_id=user.id, organization_id=org.id, role="owner"))
+        created = True
     db.add(UserIdentity(user_id=user.id, provider=provider, subject=ident["subject"], email=ident["email"]))
-    if user.email_verified_at is None:
+    if user.email_verified_at is None and trusted:
         user.email_verified_at = datetime.now(timezone.utc)  # the provider verified this address
+    grant_admin_if_listed(user)
     await db.commit()
+    if created and not trusted:
+        await send_verification(db, user)
     return user
 
 
@@ -126,7 +145,13 @@ class ChangeIn(BaseModel):
 @router.post("/password/forgot", status_code=202, dependencies=[Depends(auth_rate_limit)])
 async def forgot(body: ForgotIn, db: AsyncSession = Depends(get_db)):
     """Always 202, so the response does not reveal whether an account exists."""
-    user = await db.scalar(select(User).where(User.email == str(body.email).lower()))
+    email = str(body.email).lower()
+    user = await db.scalar(select(User).where(User.email == email))
+    try:
+        # At most 3 reset emails per address per hour, silently: the answer stays the same.
+        await enforce(f"forgot:{email}", 3, 3600)
+    except HTTPException:
+        return {"email_enabled": email_enabled()}
     if user and email_enabled():
         token = secrets.token_urlsafe(32)
         db.add(PasswordReset(user_id=user.id, token_hash=_hash(token), expires_at=datetime.now(timezone.utc) + timedelta(hours=RESET_HOURS)))
@@ -144,10 +169,20 @@ async def reset(body: ResetIn, db: AsyncSession = Depends(get_db)):
     if not pr or pr.used_at or pr.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Ask for a new one.")
     user = await db.get(User, pr.user_id)
+    if user.email_verified_at is None:
+        # Sign-ins linked before anyone proved this address (e.g. a Microsoft tenant that set someone
+        # else's email) are dropped: the person who controls the mailbox gets a clean account.
+        from sqlalchemy import delete
+        await db.execute(delete(UserIdentity).where(UserIdentity.user_id == user.id))
     user.password_hash, user.has_password = hash_password(body.password), True
     user.tokens_valid_after = _revoke_now()
     user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)  # the reset link proved the address
+    grant_admin_if_listed(user)
     pr.used_at = datetime.now(timezone.utc)
+    # Every other reset link for this account stops working too.
+    from sqlalchemy import update
+    await db.execute(update(PasswordReset).where(PasswordReset.user_id == user.id, PasswordReset.used_at.is_(None))
+                     .values(used_at=datetime.now(timezone.utc)))
     await db.commit()
     return {"ok": True}
 
@@ -219,6 +254,15 @@ async def send_verification(db: AsyncSession, user: User) -> bool:
                       "You get this email because this address was used to create a Galdus.ai account. If it was not you, ignore it.")
 
 
+async def notify_existing_account(user: User) -> bool:
+    """Someone tried to register an address that already has an account: tell its owner, privately."""
+    return await send(user.email, "Your Galdus.ai account", "You already have an account",
+                      f"Someone, maybe you, tried to create a new Galdus.ai account with {user.email}. This address already has "
+                      "an account, so nothing was created. Sign in, or choose a new password if you forgot it.",
+                      "Sign in to Galdus.ai", _frontend("home"),
+                      "If it was not you, you can ignore this email: your account is unchanged.")
+
+
 class VerifyIn(BaseModel):
     token: str = Field(min_length=20, max_length=200)
 
@@ -233,6 +277,8 @@ async def verify_email(body: VerifyIn, db: AsyncSession = Depends(get_db)):
     ev.used_at = now
     if user and not user.email_verified_at:
         user.email_verified_at = now
+    if user:
+        grant_admin_if_listed(user)
     await db.commit()
     return {"ok": True, "email": user.email if user else None}
 

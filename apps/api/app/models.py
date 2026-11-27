@@ -34,6 +34,9 @@ class User(Base):
     mfa_recovery: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
     # Last TOTP time step accepted, so a code cannot be replayed.
     mfa_last_step: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # First-run tour: None (not done yet), "completed" or "skipped".
+    onboarding_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     memberships: Mapped[list["Membership"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 

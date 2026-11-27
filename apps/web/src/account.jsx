@@ -47,7 +47,8 @@ export function AccountPage({ go }) {
   async function remove(e) {
     e.preventDefault();
     if (!window.confirm('Delete your account permanently? Workspaces where you are the only member are deleted too.')) return;
-    try { await ws.call('/v1/auth/account/delete', { method: 'POST', body: { password: del } }); window.location.hash = ''; window.location.reload(); }
+    const body = prefs?.has_password === false ? { confirm_email: del } : { password: del };
+    try { await ws.call('/v1/auth/account/delete', { method: 'POST', body }); window.location.hash = ''; window.location.reload(); }
     catch (err) { ws.toast(err.message, 'error'); setDel(''); }
   }
 
@@ -93,15 +94,17 @@ export function AccountPage({ go }) {
       <h2 className="acct-group">Your data</h2>
       <div className="acct-grid three">
         <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><Download size={18} /> Export</h3></div>
-          <p className="acct-desc">Download everything Galdus stores about you: profile, workspaces and usage records.</p>
+          <p className="acct-desc">Download everything Galdus stores about you: profile, sign-ins, workspaces, chats, runs and usage records.</p>
           <div className="acct-actions"><button type="button" className="btn ghost" onClick={exportData}>Download my data</button></div></div>
         <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><LogOut size={18} /> Sessions</h3></div>
           <p className="acct-desc">Lost a device or signed in on a shared computer? End every session at once.</p>
           <div className="acct-actions"><button type="button" className="btn ghost" onClick={signOutEverywhere}>Sign out everywhere</button></div></div>
         <form className="panel form acct-card danger-zone" onSubmit={remove}><div className="acct-head"><h3 className="acct-title"><Trash2 size={18} /> Delete account</h3></div>
-          <p className="acct-desc">This cannot be undone. Workspaces you share with others stay with them.</p>
-          {prefs?.has_password !== false && <label className="field">Confirm with your password<input type="password" value={del} onChange={e => setDel(e.target.value)} autoComplete="current-password" required maxLength={128} /></label>}
-          {prefs?.has_password === false ? <p className="acct-desc">Set a password first to confirm deletion.</p> : <div className="acct-actions"><button className="btn danger">Delete my account</button></div>}
+          <p className="acct-desc">This cannot be undone. Workspaces you share with others stay with them; if you are their only owner, make someone else owner in Team first.</p>
+          {prefs?.has_password === false
+            ? <label className="field">Type your email to confirm<input type="email" value={del} onChange={e => setDel(e.target.value)} autoComplete="off" required placeholder={ws.user?.email} /></label>
+            : <label className="field">Confirm with your password<input type="password" value={del} onChange={e => setDel(e.target.value)} autoComplete="current-password" required maxLength={128} /></label>}
+          <div className="acct-actions"><button className="btn danger">Delete my account</button></div>
         </form>
       </div>
     </div>

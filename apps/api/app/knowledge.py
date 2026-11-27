@@ -94,6 +94,8 @@ def chunk_text(content: str, size: int = CHUNK_CHARS, overlap: int = CHUNK_OVERL
 def extract_text(filename: str, data: bytes) -> tuple[str, str]:
     name = filename.lower()
     if name.endswith(".pdf"):
+        if not data.lstrip()[:5].startswith(b"%PDF-"):
+            raise HTTPException(status_code=400, detail="This file is not a valid PDF")
         from pypdf import PdfReader
         try:
             reader = PdfReader(io.BytesIO(data))
@@ -102,6 +104,9 @@ def extract_text(filename: str, data: bytes) -> tuple[str, str]:
             raise HTTPException(status_code=400, detail="This PDF could not be read") from exc
         return "\n\n".join(pages), "pdf"
     if name.endswith((".txt", ".md", ".markdown", ".csv", ".json", ".html", ".htm", ".log")):
+        # Text formats only: a binary file renamed to .txt (NUL bytes) is refused instead of indexed as noise.
+        if b"\x00" in data[:8192]:
+            raise HTTPException(status_code=400, detail="This file is not a text file")
         return data.decode("utf-8", errors="replace"), "text"
     raise HTTPException(status_code=400, detail="Supported files: .pdf, .txt, .md, .csv, .json, .html, .log")
 

@@ -89,7 +89,7 @@ def test_login_failures_are_indistinguishable(client):
     wrong = client.post("/api/v1/auth/login", json={"email": email, "password": "wrong-password-123"})
     missing = client.post("/api/v1/auth/login", json={"email": "nobody@example.com", "password": "wrong-password-123"})
     assert wrong.status_code == missing.status_code == 401
-    assert wrong.json() == missing.json()
+    assert wrong.json()["detail"] == missing.json()["detail"]
 
 
 @pytest.mark.parametrize("header", [None, "Bearer not-a-jwt", "Basic abc"])

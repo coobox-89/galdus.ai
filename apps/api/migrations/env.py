@@ -18,7 +18,14 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
+# Arbitrary constant: one Galdus.ai migration at a time per database, even if two instances start together.
+MIGRATION_LOCK_ID = 7_262_021
+
+
 def do_run_migrations(connection):
+    from sqlalchemy import text
+    connection.execute(text("SELECT pg_advisory_lock(:id)"), {"id": MIGRATION_LOCK_ID})
+    connection.commit()
     context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
     with context.begin_transaction():
         context.run_migrations()

@@ -1,0 +1,44 @@
+name: Uptime check
+
+# Minimal, free monitoring: every 30 minutes the API readiness endpoint is checked (database and
+# migrations included). After a failure an issue labelled "incident" is opened (GitHub notifies the
+# repository owner); it is closed automatically when the API answers again.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API: ${{ vars.GALDUS_API_URL || 'https://galdus-api.onrender.com' }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check /readyz (free instances may need up to a minute to wake)
+        id: probe
+        run: |
+          if curl -fsS --retry 6 --retry-delay 10 --retry-all-errors --max-time 60 "$API/readyz" -o body.json; then
+            echo "up=true" >> "$GITHUB_OUTPUT"; cat body.json
+          else
+            echo "up=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open or update the incident issue
+        if: steps.probe.outputs.up == 'false'
+        run: |
+          gh label create incident --color B60205 --description "Automatic uptime alert" 2>/dev/null || true
+          OPEN=$(gh issue list --label incident --state open --json number --jq '.[0].number')
+          MSG="Readiness check failed at $(date -u +%FT%TZ) for $API/readyz. See docs/OPERATIONS.md, section Incidents."
+          if [ -n "$OPEN" ]; then gh issue comment "$OPEN" --body "$MSG"; else gh issue create --label incident --title "API is down or not ready" --body "$MSG"; fi
+          exit 1
+      - name: Close the incident when the API is back
+        if: steps.probe.outputs.up == 'true'
+        run: |
+          for n in $(gh issue list --label incident --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered at $(date -u +%FT%TZ)."
+          done
