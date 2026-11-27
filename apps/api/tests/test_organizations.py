@@ -28,4 +28,5 @@ def test_organizations_query_is_scoped_to_authenticated_user():
     statement = db.execute.await_args.args[0]
     compiled = str(statement.compile(compile_kwargs={"literal_binds": True}))
     assert "memberships.user_id" in compiled
-    assert str(user_id) in compiled
+    # SQLAlchemy's PostgreSQL UUID literal renderer uses the 32-char hex form.
+    assert user_id.hex in compiled
