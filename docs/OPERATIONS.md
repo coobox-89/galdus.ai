@@ -70,7 +70,7 @@ export BACKUP_PASSPHRASE='<long passphrase from your password manager>'
 ./scripts/backup-db.sh ~/galdus-backups
 ```
 
-Keep at least the last 4 weekly and 3 monthly copies, in two places (for example your disk and a private cloud folder). Store `ENCRYPTION_KEY` and `BACKUP_PASSPHRASE` in your password manager, not next to the file. Before a risky release, take an extra backup.
+Keep the last 4 weekly copies (about 30 days) in two places (for example your disk and a private cloud folder) and delete older ones: the privacy policy promises that a deleted account disappears from backups within 30 days. Store `ENCRYPTION_KEY` and `BACKUP_PASSPHRASE` in your password manager, not next to the file. Before a risky release, take an extra backup.
 
 Docker Compose: `docker compose exec db pg_dump -U galdus -Fc galdus > galdus-$(date +%F).dump`, or run the script against the published database.
 
