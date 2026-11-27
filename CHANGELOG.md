@@ -2,6 +2,50 @@
 
 # Changelog
 
+## [1.0.0-rc.1] (2026-11-27)
+
+Release candidate after the production-readiness review ([security review](docs/security/review-2026-11-27.md), [release checklist](docs/RELEASE_CHECKLIST.md)).
+
+### Security
+
+- Per-account lockout: 5 wrong passwords or 10 wrong second-factor codes in 15 minutes return 429, whatever the IP.
+- `ADMIN_EMAILS` grants the platform console only to a confirmed address in production.
+- Cloud-drive connections are completed by the signed-in session that started them (`POST /api/v1/connectors/{provider}/complete`), so a consent link cannot attach someone's drive to another workspace.
+- Sign in with Microsoft. New accounts only; never linked to an existing account by email. A password reset drops sign-ins linked before the address was proven.
+- With `REQUIRE_EMAIL_VERIFICATION` and SMTP, registration answers the same for new and existing addresses (202) and notifies the real owner.
+- Webhooks: 400/422 on malformed bodies, 10 calls a minute per automation. Forgot-password: 3 emails per address per hour; using a reset link revokes the others. PDF and text uploads checked by content.
+- Content Security Policy on the API and the console; COOP; SQL parameters hidden from logs; JSON logs with route templates only (no tokens, codes or query strings); uniform error bodies with a request id.
+- Production refuses a missing `ENCRYPTION_KEY`, placeholder or development secrets, `ENCRYPTION_KEY` equal to `JWT_SECRET`, non-https public URLs, `SMTP_HOST` without `SMTP_FROM` and disabled rate limits.
+- Account deletion works for accounts without a password (confirm with your email) and never leaves a shared workspace without an owner. The export (format 2) adds conversations, runs and linked sign-ins.
+- A test fails if any table lacks row-level security. gitleaks on the whole history and blocking `pip-audit` and `npm audit` in CI.
+
+### Added
+
+- First-run guided tour: seven steps (Home, models, chat, knowledge, agents, automations, account), spotlight on the item explained, Back, Next, Skip, keyboard and focus trap, reduced motion, bottom sheet on phones. Saved on the account (migration 0011, `GET/PUT /api/v1/auth/onboarding`); **Replay the tour** in Account.
+- Version shown in the sidebar and in Account (console and API); `/health` and `/readyz` report it, `/readyz` also reports pending migrations.
+- Migrations take a Postgres advisory lock.
+- `docker-compose.prod.yml` with Caddy (automatic HTTPS) for a single server; nginx security headers for the console image.
+- `scripts/backup-db.sh` and `scripts/restore-db.sh` (encrypted backups, restore into an empty database with checks), exercised end to end.
+- Workflows: tagged releases from the CHANGELOG (`release.yml`), uptime check with automatic incident issues (`uptime.yml`), secret scan and Docker web image in CI, OpenAPI drift check.
+- Documentation: [Architecture](docs/ARCHITECTURE.md), [Operations](docs/OPERATIONS.md), [API](docs/API.md) with the generated [OpenAPI document](docs/api/openapi.json), [User guide](docs/USER_GUIDE.md), rewritten [Deployment](docs/DEPLOYMENT.md) with every variable, updated screenshots.
+
+### Changed
+
+- API dependencies pinned with `apps/api/requirements.lock`; both packages declare `AGPL-3.0-only`; Vite moved to development dependencies.
+- Interface copy in US English throughout ("Personalize", "organized", "neutralize", "canceled"); legal texts unchanged.
+- Small print (`--faint`) is slightly lighter for WCAG AA contrast (5.1:1).
+- Deleting an account now signs out to the sign-in page with a confirmation.
+
+### Fixed
+
+- Team page no longer scrolls sideways on phones and tablets; the Chat page has a heading; valid roles on the Apps picker; the photo input has a label; no 404 requests for missing sign-in marks.
+- Opening `#/admin` without platform admin rights lands on Home instead of failing requests.
+- Flaky shared rate-limit test.
+
+### Removed
+
+- Unused code and files: the previous landing page styles and `Swoosh` component, `initialsOf`, a stray `pgvector` wheel, the Netlify configuration (the console is hosted on GitHub Pages).
+
 ## 0.9.1 (2026-11-27)
 
 - Default profile picture: an anonymous Viking silhouette in Blue Night on the lime gradient, used everywhere a person appears (sidebar, profile, team, chat).

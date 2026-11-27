@@ -78,8 +78,8 @@ class Settings(BaseSettings):
     # Shared secret for POST /api/v1/automation/tick (scheduler). Empty disables schedules.
     automation_token: str = ""
 
-    # Rate limits (requests per window per client IP / user). In-process only:
-    # run a single API instance or put a shared limiter in front for scale-out.
+    # Rate limits (requests per minute per client IP / user). RATE_LIMIT_BACKEND=memory counts per
+    # instance; postgres shares the counters through the database across every instance.
     rate_limit_enabled: bool = True
     # memory: per instance. postgres: shared across every API instance through the database.
     rate_limit_backend: str = "memory"

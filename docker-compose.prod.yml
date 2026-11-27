@@ -1,0 +1,39 @@
+# Production overlay for a single server with Docker Compose:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Adds an HTTPS reverse proxy (Caddy, automatic certificates) and keeps the database, API and
+# web containers off the public network. Set DOMAIN and the production values in .env first
+# (see docs/DEPLOYMENT.md, section "Docker Compose").
+services:
+  db:
+    ports: !reset []
+  api:
+    ports: !reset []
+    environment:
+      ENVIRONMENT: production
+      PUBLIC_API_URL: https://${DOMAIN:?Set DOMAIN in .env}
+      FRONTEND_URL: https://${DOMAIN}
+      CORS_ORIGINS: https://${DOMAIN}
+      # Only nginx (web) reaches the API; Caddy replaces any X-Forwarded-For sent by clients.
+      FORWARDED_ALLOW_IPS: "*"
+  web:
+    ports: !reset []
+  caddy:
+    image: caddy:2.8-alpine
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -36,6 +36,6 @@ def configure(fmt: str = "json", level: str = "INFO") -> None:
     root.handlers[:] = [handler]
     root.setLevel(level.upper())
     # Libraries that log full URLs (with query strings) or payloads at INFO/DEBUG stay quiet.
-    for noisy in ("LiteLLM", "litellm", "httpx", "httpcore", "httpx2", "mcp", "uvicorn.access"):
+    for noisy in ("LiteLLM", "litellm", "httpx", "httpcore", "httpx2", "mcp", "uvicorn.access", "alembic"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     logging.getLogger("uvicorn.access").disabled = True

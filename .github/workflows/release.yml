@@ -21,7 +21,7 @@ jobs:
           test "$TAG" = "$APP" || { echo "Tag $TAG does not match apps/api/app/version.py ($APP)"; exit 1; }
       - name: Extract release notes from CHANGELOG.md
         run: |
-          awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {if (on) exit} on' CHANGELOG.md > notes.md
+          awk -v v="${GITHUB_REF_NAME#v}" 'index($0, "## [" v "]") == 1 {on=1; next} /^## / {if (on) exit} on' CHANGELOG.md > notes.md
           test -s notes.md || { echo "No CHANGELOG section for ${GITHUB_REF_NAME#v}"; exit 1; }
       - name: Publish the release
         env:
