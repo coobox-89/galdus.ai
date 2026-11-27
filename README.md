@@ -1,57 +1,134 @@
-# Galdus.ai
+<p align="center">
+  <a href="https://coobox-89.github.io/galdus.ai/"><img src="docs/assets/banner.jpg" alt="Galdus.ai, the AI operating system" width="100%"></a>
+</p>
 
-**The Open AI Operating System.**
+<p align="center">
+  <img src="docs/assets/logo-animated.svg" alt="" width="84">
+</p>
 
-Galdus.ai is an independent, open-source, self-hostable AI platform for individuals, teams, and organizations. Its goal is to bring models, agents, knowledge, automation, and governance together behind one provider-neutral control plane.
+<h3 align="center">The open source AI operating system.<br>Bring any model. Keep your data.</h3>
 
-> **Status:** early development. This repository is a foundation scaffold, not a production-ready platform. Roadmap items are not implemented capabilities.
+<p align="center">
+  <a href="https://coobox-89.github.io/galdus.ai/"><img alt="Live preview" src="https://img.shields.io/badge/live%20preview-open-B6FF00?style=for-the-badge&labelColor=0B1F3B"></a>
+  <a href="LICENSE"><img alt="License AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-F8FAFC?style=for-the-badge&labelColor=0B1F3B"></a>
+  <a href="CHANGELOG.md"><img alt="Version 0.6.0" src="https://img.shields.io/badge/version-0.6.0-FFC107?style=for-the-badge&labelColor=0B1F3B"></a>
+  <a href="https://github.com/coobox-89/galdus.ai/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/coobox-89/galdus.ai/ci.yml?branch=main&style=for-the-badge&label=ci&labelColor=0B1F3B&color=3FD47A"></a>
+</p>
 
-## Product areas
+<p align="center">
+  <a href="#what-is-inside">Modules</a> ·
+  <a href="#see-it">Screens</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="docs/DEPLOYMENT.md">Deploy</a> ·
+  <a href="docs/README.md">Docs</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
-- **Models** — connect hosted and self-hosted language models.
-- **Agents** — build and operate task-oriented AI agents.
-- **Knowledge** — manage searchable knowledge sources and retrieval.
-- **Automation** — orchestrate workflows and integrations.
-- **Governance** — apply access control, auditability, and operational policies.
+<br>
 
-## Architecture
+Galdus.ai brings models, knowledge, agents, automation and governance together in one workspace you can host yourself. It is model agnostic by design: every workspace connects its own providers with its own keys, from OpenAI and Anthropic to open-weight models such as Qwen, DeepSeek, Llama and Mistral running on your own hardware.
 
-The initial implementation is a modular monolith: React + Vite web console, FastAPI backend, LiteLLM model gateway, PostgreSQL, SQLAlchemy and Alembic migrations. The identity foundation includes user registration/login, password hashing, JWT access tokens, organizations and memberships. Agents, RAG, automation and full governance remain planned work.
+> [!NOTE]
+> **Early access.** Galdus.ai 0.6 runs as a free public preview on GitHub Pages, Render and Supabase. The free API sleeps when idle, so the first request after a pause can take up to a minute.
+
+## What is inside
+
+<p align="center"><img src="docs/assets/modules.jpg" alt="The nine Galdus.ai modules" width="100%"></p>
+
+| Module | What you can do |
+|:--|:--|
+| **Chat** | Stream answers from any connected model, attach files and images, pick an assistant persona, ground replies in a knowledge collection with citations, pin and search past chats. |
+| **Models** | Connect OpenAI, Anthropic, Gemini, Mistral, DeepSeek, OpenRouter, Groq, Together, Fireworks, xAI, Ollama or any OpenAI-compatible endpoint (vLLM, LM Studio, TGI). Type any model name. Keys are encrypted at rest. |
+| **Knowledge** | Build collections from uploads, public web pages, Google Drive and SharePoint or OneDrive. Semantic search with pgvector when an embedding model is set, keyword search otherwise. |
+| **Agents** | Combine instructions, a model, knowledge and tools into a reusable assistant. Every run is stored with its steps and tool calls. |
+| **Apps** | Eight ready tools: chat with documents, summarize, rewrite tone, draft an email, IT ticket triage, contract review, meeting notes to actions, translate. |
+| **Automation** | Run agents on a cron schedule or from an inbound webhook (n8n, Make, Zapier, ITSM tools) and deliver results to Slack or Teams. |
+| **Integrations** | Connect MCP servers over Streamable HTTP with a per-tool allowlist, use built-in tools (calculator, date and time, web fetch, knowledge search) and link cloud drives. |
+| **Governance** | Owner, admin and member roles, invitation links, audit log, monthly token limits, prompt-injection guardrails and a platform admin console. |
+| **Open source** | AGPL-3.0, self-hostable with Docker Compose, PostgreSQL with row-level security. Sign in with email, Google or GitHub. |
+
+## See it
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/sign-in.jpg" alt="Sign-in screen"><p align="center"><b>Sign in</b> with email, Google or GitHub</p></td>
+    <td width="50%"><img src="docs/assets/screens/home.jpg" alt="Workspace home"><p align="center"><b>Home</b> with guided setup and live usage</p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/chat.jpg" alt="Chat with citations"><p align="center"><b>Chat</b> grounded in your documents</p></td>
+    <td width="50%"><img src="docs/assets/screens/apps.jpg" alt="Apps gallery"><p align="center"><b>Apps</b> for everyday work</p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/screens/integrations.jpg" alt="Integrations"><p align="center"><b>Integrations</b> with MCP and cloud drives</p></td>
+    <td width="50%"><img src="docs/assets/screens/account.jpg" alt="Account and chat preferences"><p align="center"><b>Account</b> and personal chat preferences</p></td>
+  </tr>
+</table>
 
 ## Quick start
 
-1. Copy `.env.example` to `.env`.
-2. Replace `POSTGRES_PASSWORD` with a strong random password and `JWT_SECRET` with at least 32 random characters.
-3. Start services: `docker compose up --build -d`.
-4. Apply database migrations: `docker compose exec api alembic -c alembic.ini upgrade head`.
-5. Open the web console at http://localhost:5173 and API docs at http://localhost:8000/docs.
-6. Create an account from the web console; registration creates an organization/workspace for that account.
+You need Docker with Compose.
 
-The web container serves the built frontend through Nginx on container port 80 (mapped to host port 5173) and proxies `/api/` to the backend. API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two). The chat endpoint `POST /api/v1/chat/completions` also requires a valid Bearer token.
+```bash
+git clone https://github.com/coobox-89/galdus.ai.git && cd galdus.ai
+cp .env.example .env          # set POSTGRES_PASSWORD, JWT_SECRET and ENCRYPTION_KEY
+docker compose up --build -d  # database migrations run automatically
+```
 
-Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
+Open the console at http://localhost:5173 and the API reference at http://localhost:8000/docs. Create an account: registration also creates your workspace. Then open **Models**, connect a provider with your key and start chatting.
 
-## Project handoff for Claude
+Secrets live only in the backend `.env` or in your hosting provider's secret store. Never put them in browser code, `VITE_*` variables or commits.
 
-For a complete transfer of project context, architecture decisions, current implementation, open engineering tasks, deployment plan and owner actions, read [docs/CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md). It is designed to be given to Claude together with access to this GitHub repository.
+## Architecture
 
-## Public MVP deployment
+<p align="center"><img src="docs/assets/architecture.jpg" alt="Galdus.ai architecture" width="100%"></p>
 
-See [the Netlify + dedicated API deployment guide](docs/DEPLOYMENT-NETLIFY.md) for the first public topology, required environment variables, database migrations, and smoke tests. The repository includes `netlify.toml` for the React/Vite frontend; FastAPI and PostgreSQL must be deployed separately.
+A modular monolith keeps development and hosting simple while the product grows ([ADR 0001](docs/architecture/0001-modular-monolith.md)).
+
+| Layer | Stack |
+|:--|:--|
+| Web and desktop | React 18, Vite, motion, lucide icons, Montserrat; Tauri 2 desktop shell in `apps/web/src-tauri` |
+| API | FastAPI, SQLAlchemy async, Alembic, server-sent events for streaming |
+| Models | LiteLLM with per-workspace encrypted provider keys (Fernet) |
+| Data | PostgreSQL 16 with pgvector and row-level security |
+| Scheduling | croniter, woken every 15 minutes by a GitHub Actions workflow |
+
+## Deploy
+
+The public preview runs at zero cost on GitHub Pages (web), Render free (API) and Supabase free (database). The full runbook, including Google, GitHub and Microsoft sign-in, SMTP email and scaling up, is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Desktop
 
-The Tauri 2 desktop shell is under `apps/web/src-tauri`. Build it from `apps/web` with Rust and the platform prerequisites installed:
+From `apps/web`, with Rust and the platform prerequisites installed, run `npm install` and `npm run tauri build`. Set `VITE_API_BASE_URL` to your API's public URL (for example `https://api.example.com/api`) at build time. CI publishes desktop builds as workflow artifacts.
 
-- `npm install`
-- `npm run tauri build`
+## Brand
 
-For a desktop build connected to a remote Galdus API, set `VITE_API_BASE_URL` to the API's public base URL at build time (for example, `https://api.example.com/api`). The default `/api` path is intended for the web frontend served behind the included Nginx proxy; it is not a remote API address for a standalone desktop installation. The desktop CI workflow can publish platform build artifacts after a successful GitHub Actions run; installers are not checked into this repository.
+| | Color | Hex |
+|:--:|:--|:--|
+| <img src="https://img.shields.io/badge/%20-%20-0B1F3B?style=flat-square" alt=""> | Blue Night | `#0B1F3B` |
+| <img src="https://img.shields.io/badge/%20-%20-B6FF00?style=flat-square" alt=""> | Lime | `#B6FF00` |
+| <img src="https://img.shields.io/badge/%20-%20-FFC107?style=flat-square" alt=""> | Energy Yellow | `#FFC107` |
+| <img src="https://img.shields.io/badge/%20-%20-F8FAFC?style=flat-square" alt=""> | Cloud White | `#F8FAFC` |
 
-## Security warning
+Typeface: Montserrat. Logo files: [`logo.svg`](docs/assets/logo.svg) and [`logo-animated.svg`](docs/assets/logo-animated.svg).
 
-This scaffold is for local development only. It is not production-ready: add and test rate limiting, email verification, password reset, refresh-token/session revocation, brute-force protection, tenant-scoped authorization on every resource, security headers, audit trails, backups, monitoring and hardened deployment before exposing it publicly. The initial bearer tokens are short-lived JWTs but are not yet revocable.
+## Documentation
+
+| Guide | |
+|:--|:--|
+| [Deployment](docs/DEPLOYMENT.md) | Hosting, environment variables, sign-in providers, smoke tests |
+| [Security](docs/security/overview.md) | Implemented controls, open gaps, how to report a vulnerability |
+| [Roadmap](docs/product/roadmap.md) | What ships today and what comes next |
+| [Architecture](docs/architecture/0001-modular-monolith.md) | Decision records |
+| [Changelog](CHANGELOG.md) | Release history |
+| [License compliance](docs/license-compliance.md) | AGPL-3.0 obligations before each release |
+| [Project handoff](docs/CLAUDE_HANDOFF.md) | Full context for an AI coding agent continuing the work |
+
+## Contributing
+
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## License
 
-GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) and [license compliance notes](docs/LICENSE-COMPLIANCE.md). Third-party components retain their own licenses.
+GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) and the [license compliance notes](docs/license-compliance.md). Third-party components keep their own licenses.
+
+<p align="center"><br><img src="docs/assets/logo.svg" alt="" width="36"><br><sub><b>Galdus.ai</b> · Powered by you. Supercharged by AI.</sub></p>

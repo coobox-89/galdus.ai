@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 108 108" width="108" height="108" role="img" aria-label="Galdus.ai">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCE6F4"/></linearGradient>
+    <linearGradient id="p" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4FF6B"/><stop offset=".5" stop-color="#B6FF00"/><stop offset="1" stop-color="#3FD47A"/></linearGradient>
+  </defs>
+  <path d="M28 0H100V28H28V72H44V47H72V100H28L0 72V28Z" fill="url(#g)"/>
+  <rect x="72" y="47" width="28" height="25" rx="1" fill="url(#p)"/>
+</svg>
