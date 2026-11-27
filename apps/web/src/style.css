@@ -398,29 +398,30 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 
 /* ---- Sign-in hero (mockup) ---------------------------------------------------- */
 .login-hero { position: relative; min-height: 100vh; min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; color: #fff; isolation: isolate; }
-.hero-bg { position: absolute; inset: 0; z-index: -1; background: #0B1F3B; }
-.hero-photo-blur { position: absolute; inset: -8%; background-size: cover; background-position: 60% 30%; filter: blur(34px) saturate(1.15) brightness(.72); transform: scale(1.1); }
-.hero-land { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hero-warrior-wrap { position: absolute; top: 0; bottom: 0; height: 100%; min-height: 700px; aspect-ratio: 655 / 941; left: calc(54% - 34.8vh); }
-.hero-warrior { position: relative; width: 100%; height: 100%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 82%, transparent 100%), linear-gradient(0deg, transparent 0, #000 12%);
-  -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 82%, transparent 100%), linear-gradient(0deg, transparent 0, #000 12%); mask-composite: intersect; }
-.hero-warrior img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; transform-origin: 45% 30%; }
-.arm-glow { position: absolute; inset: 0; mix-blend-mode: screen; background: radial-gradient(40% 30% at 50% 72%, rgba(182, 255, 0, .38), transparent 70%); animation: armPulse 3.2s ease-in-out infinite; }
-.arm-sweep { position: absolute; inset: 0; mix-blend-mode: screen; background: linear-gradient(125deg, transparent 42%, rgba(228, 255, 107, .55) 50%, transparent 58%); background-size: 260% 260%; animation: armSweep 3.8s cubic-bezier(.6, 0, .4, 1) infinite; }
+.hero-bg { position: absolute; inset: 0; z-index: -1; background: #071530; container-type: size; overflow: hidden; }
+.plate { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: max(100cqw, calc(100cqh * 1672 / 941)); aspect-ratio: 1672 / 941; }
+.plate-inner { position: absolute; inset: 0; transform-origin: 56% 40%; }
+.plate img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+.arm-glow { position: absolute; inset: 0; mix-blend-mode: screen; background: radial-gradient(14% 18% at 55% 75%, rgba(182, 255, 0, .42), transparent 70%); animation: armPulse 3.2s ease-in-out infinite; }
+.arm-sweep { position: absolute; inset: 0; mix-blend-mode: screen; background: linear-gradient(125deg, transparent 44%, rgba(228, 255, 107, .6) 50%, transparent 56%); background-size: 300% 300%; animation: armSweep 3.8s cubic-bezier(.6, 0, .4, 1) infinite; }
 .paint-sweep { position: absolute; inset: 0; mix-blend-mode: screen; background: linear-gradient(180deg, transparent 40%, rgba(255, 255, 255, .6) 50%, transparent 60%); background-size: 100% 300%; animation: paintSweep 5s ease-in-out infinite 2s; }
 @keyframes armPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes armSweep { 0% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
 @keyframes paintSweep { 0% { background-position: 0 100%; } 60%, 100% { background-position: 0 0%; } }
 .spark { position: absolute; display: block; background: #E4FF6B; border-radius: 1.5px; box-shadow: 0 0 10px 2px rgba(182, 255, 0, .8); }
-.hero-fog { position: absolute; inset: -10%; pointer-events: none; opacity: .55;
-  background: radial-gradient(30% 18% at 20% 70%, rgba(220, 232, 244, .35), transparent 70%), radial-gradient(35% 20% at 80% 55%, rgba(220, 232, 244, .25), transparent 70%);
+.hero-fog { position: absolute; inset: -10%; pointer-events: none; opacity: .5;
+  background: radial-gradient(30% 16% at 18% 78%, rgba(220, 232, 244, .3), transparent 70%), radial-gradient(34% 18% at 82% 62%, rgba(220, 232, 244, .22), transparent 70%);
   animation: fogDrift 30s ease-in-out infinite alternate; }
 @keyframes fogDrift { to { transform: translateX(6%); } }
 .hero-snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Legibility: deep Blue Night on the text side, soft vignette elsewhere. */
 .hero-shade { position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgba(7, 21, 48, .9) 0%, rgba(7, 21, 48, .55) 30%, rgba(7, 21, 48, 0) 46%, rgba(7, 21, 48, 0) 70%, rgba(7, 21, 48, .5) 100%),
-              linear-gradient(0deg, rgba(7, 21, 48, .85) 0%, rgba(7, 21, 48, 0) 28%); }
+  background:
+    linear-gradient(90deg, rgba(5, 16, 36, .92) 0%, rgba(6, 19, 42, .82) 18%, rgba(8, 24, 50, .55) 32%, rgba(11, 31, 59, .18) 44%, rgba(11, 31, 59, 0) 52%),
+    linear-gradient(270deg, rgba(5, 16, 36, .62) 0%, rgba(5, 16, 36, .25) 16%, rgba(5, 16, 36, 0) 30%),
+    linear-gradient(0deg, rgba(5, 16, 36, .92) 0%, rgba(5, 16, 36, .45) 12%, rgba(5, 16, 36, 0) 26%),
+    linear-gradient(180deg, rgba(5, 16, 36, .6) 0%, rgba(5, 16, 36, 0) 14%),
+    radial-gradient(120% 90% at 58% 40%, rgba(11, 31, 59, 0) 55%, rgba(11, 31, 59, .35) 100%); }
 
 .lh-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 26px clamp(20px, 5vw, 84px); }
 .lh-brand { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
@@ -471,7 +472,6 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 .lh-rule { width: 22px; height: 2px; background: var(--lime); }
 
 @media (max-width: 1280px) {
-  .hero-warrior-wrap { left: calc(56% - 34.8vh); }
   .lh-features { gap: 22px 28px; }
 }
 @media (min-width: 1101px) and (max-height: 860px) {
@@ -487,18 +487,19 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 }
 @media (max-width: 1100px) {
   .lh-main { grid-template-columns: minmax(0, 1fr) 360px; }
-  .hero-warrior-wrap { left: calc(50% - 30vh); opacity: .75; }
+  .plate { translate: -54% -50%; }
   .lh-features span { display: none; }
   .lh-features li { align-items: center; grid-template-columns: 28px 1fr; gap: 12px; }
   .lh-features .ic { width: 26px; height: 26px; }
 }
 @media (max-width: 900px) {
   .login-hero { grid-template-rows: auto auto auto; }
-  .hero-bg { position: absolute; inset: 0; }
-  .hero-warrior-wrap { height: 72vh; min-height: 480px; left: 50%; translate: -48% 0; opacity: 1; }
-  .hero-shade { background: linear-gradient(0deg, #0B1F3B 0%, rgba(11, 31, 59, .96) 30%, rgba(7, 21, 48, .35) 52%, rgba(7, 21, 48, .15) 75%, rgba(7, 21, 48, .5) 100%); }
+  .plate { top: 0; translate: -55% 0; width: auto; height: max(78svh, 560px); }
+  .hero-shade { background:
+    linear-gradient(180deg, rgba(5, 16, 36, .55) 0, rgba(5, 16, 36, 0) 10svh, rgba(5, 16, 36, 0) 38svh, rgba(5, 16, 36, .7) 54svh, #071530 max(74svh, 540px), #071530 100%); }
+  .hero-fog { opacity: .3; }
   .lh-nav a { display: none; }
-  .lh-main { grid-template-columns: 1fr; padding-top: 40vh; gap: 0; }
+  .lh-main { grid-template-columns: 1fr; padding-top: 46svh; gap: 0; }
   .lh-copy { display: contents; }
   .lh-copy > * { order: 1; }
   .lh-card { order: 2; margin: 6px 0 28px; }
