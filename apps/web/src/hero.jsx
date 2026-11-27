@@ -7,7 +7,6 @@ import { BASE } from './paths';
 
 const W = 1672, H = 941;
 const ARM = [[670, 470], [750, 400], [890, 420], [930, 560], [920, 700], [1020, 680], [1160, 780], [1180, 840], [1070, 910], [920, 900], [800, 820], [710, 700], [670, 560]];
-const STRIPE = [[890, 40], [977, 40], [972, 262], [896, 256]];
 const pct = pts => pts.map(([x, y]) => `${(x / W * 100).toFixed(2)}% ${(y / H * 100).toFixed(2)}%`).join(', ');
 
 function seeded(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
@@ -80,7 +79,9 @@ export function Backdrop() {
           {!reduce && <>
             <div className="arm-glow" style={{ clipPath: `polygon(${pct(ARM)})` }} />
             <div className="arm-sweep" style={{ clipPath: `polygon(${pct(ARM)})` }} />
-            <div className="paint-sweep" style={{ clipPath: `polygon(${pct(STRIPE)})` }} />
+            <div className="paint" style={{ '--pm': `url(${BASE}/hero/paint-mask.png)` }}>
+              <i className="paint-sheen" /><i className="paint-glow" />
+            </div>
             {sparks.map(p => (
               <motion.i key={p.k} className="spark" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s }}
                 initial={{ opacity: 0 }} animate={{ opacity: [0, 1, .9, 0], x: [0, 0, p.dx * .4, p.dx], y: [0, 0, p.dy * .4, p.dy], scale: [.4, 1.2, 1, .6] }}
