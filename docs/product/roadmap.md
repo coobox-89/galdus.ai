@@ -2,7 +2,7 @@
 
 # Roadmap
 
-Galdus.ai 0.6 is a public early-access preview. This page separates what ships today from what is planned. Planned items are direction, not commitments.
+Galdus.ai 0.6.1 is a public early-access preview. This page separates what ships today from what is planned. Planned items are direction, not commitments.
 
 ## Shipped in 0.6
 
@@ -16,7 +16,7 @@ Galdus.ai 0.6 is a public early-access preview. This page separates what ships t
 | Automation | Cron schedules, inbound webhooks, delivery to Slack or Teams |
 | Integrations | MCP servers over Streamable HTTP with tool allowlists; built-in tools |
 | Governance | Roles, invitations, audit log, monthly token limits, guardrails, platform admin console |
-| Experience | Brand redesign with motion, animated logo, responsive sign-in, command palette, desktop shell |
+| Experience | Brand redesign with motion, animated logo, responsive sign-in for phones up to ultra-wide screens, command palette, desktop shell |
 
 ## Next
 
