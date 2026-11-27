@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BASE } from './paths';
 import { useWs } from './workspace';
 import { Select } from './select';
+import { Avatar } from './profile';
 import { PageHead, when } from './ui';
 
 export function TeamPage() {
@@ -55,7 +56,7 @@ export function TeamPage() {
         <div className="panel-head"><div><h3>Members</h3><p>Owners manage everything. Admins manage models, knowledge, agents and automations. Members use them.</p></div></div>
         <div className="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th /></tr></thead>
           <tbody>{members.map(m => (
-            <tr key={m.user_id}><td>{m.full_name}</td><td>{m.email}</td>
+            <tr key={m.user_id}><td><span className="member"><Avatar user={m} size={28} />{m.full_name}</span></td><td>{m.email}</td>
               <td>{ws.isOwner && m.user_id !== ws.user.id ? (
                 <Select compact value={m.role} onChange={v => setRole(m, v)} aria-label={`Role of ${m.full_name || m.email}`}
                   options={[{ value: 'owner', label: 'Owner' }, { value: 'admin', label: 'Admin' }, { value: 'member', label: 'Member' }]} />) : <span className="chip">{m.role}</span>}</td>

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { BASE } from './paths';
 
 // How to get a key for each provider in the catalog. Monograms are drawn in the brand palette (no third-party logos).
 export const GUIDE = {
@@ -40,8 +41,34 @@ export const GUIDE = {
     steps: ['Start the server with its OpenAI-compatible API enabled', 'Publish it over https, ending in /v1', 'Paste the address and, if the server needs one, its key'] },
 };
 
+// Official provider logos are not bundled (trademarks): drop the provider's own SVG from its brand kit into
+// public/brand/providers/<id>.svg and it is shown here, recoloured to the platform palette.
+const logoState = new Map();
+function useLogo(id) {
+  const url = `${BASE}/brand/providers/${id}.svg`;
+  const [ok, setOk] = useState(logoState.get(id));
+  useEffect(() => {
+    if (logoState.has(id)) { setOk(logoState.get(id)); return undefined; }
+    let live = true;
+    const img = new Image();
+    img.onload = () => { logoState.set(id, true); if (live) setOk(true); };
+    img.onerror = () => { logoState.set(id, false); if (live) setOk(false); };
+    img.src = url;
+    return () => { live = false; };
+  }, [id, url]);
+  return ok ? url : null;
+}
+
 export function ProviderMark({ id, size = 28 }) {
   const g = GUIDE[id] || { short: '?', tint: '#B6FF00' };
+  const logo = useLogo(id);
+  if (logo) {
+    return (
+      <span className="pmark logo" style={{ width: size, height: size, '--tint': g.tint }} aria-hidden="true">
+        <span style={{ WebkitMaskImage: `url(${logo})`, maskImage: `url(${logo})` }} />
+      </span>
+    );
+  }
   return (
     <span className="pmark" style={{ width: size, height: size, '--tint': g.tint, fontSize: size * (g.short.length > 2 ? .32 : .38) }} aria-hidden="true">
       {g.short}
