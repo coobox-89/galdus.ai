@@ -1,0 +1,38 @@
+# Render Blueprint for the Galdus.ai API.
+# Preview launch runs on the free plan: the service sleeps after ~15 minutes idle
+# and the first request then takes 30-60 s. For real traffic change `plan` to
+# `starter` (always on), set RUN_MIGRATIONS_ON_START to "false" and uncomment
+# preDeployCommand.
+services:
+  - type: web
+    name: galdus-api
+    runtime: docker
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: free
+    healthCheckPath: /readyz
+    # preDeployCommand: alembic upgrade head   # paid plans only
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: RUN_MIGRATIONS_ON_START
+        value: "true"
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false   # Supabase session-pooler URL, entered in the Render dashboard
+      - key: CORS_ORIGINS
+        value: https://coobox-89.github.io,https://galdus-ai.netlify.app
+      - key: LITELLM_MODEL
+        value: openai/gpt-4o-mini
+      - key: ALLOWED_MODELS
+        value: openai/gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DAILY_TOKEN_BUDGET_PER_USER
+        value: "200000"

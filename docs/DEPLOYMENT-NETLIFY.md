@@ -1,56 +1,86 @@
-# Public MVP deployment
+# Public MVP deployment runbook
 
-This repository is not a one-click production deployment yet. The supported first public topology is:
+## Preview launch (zero cost)
 
-- Netlify: React/Vite static frontend.
-- A managed container host: FastAPI API image from `apps/api/Dockerfile`.
-- Managed PostgreSQL: persistent database with backups.
+| Layer | Service |
+|---|---|
+| Frontend | GitHub Pages, `https://coobox-89.github.io/galdus.ai/` (`.github/workflows/pages.yml`) |
+| API | Render **free** plan, `render.yaml` (sleeps after ~15 min idle; cold start 30-60 s; migrations run at container start) |
+| Database | Supabase free project `galdus-ai` (Frankfurt) |
 
-## 1. Deploy the API and database
+One-time setup: GitHub **Settings → Pages → Source: GitHub Actions**; Supabase password for `galdus_app`; Render **New → Blueprint** with `DATABASE_URL` and `OPENAI_API_KEY`. If Render does not assign `galdus-api.onrender.com`, set the repository variable `GALDUS_API_BASE_URL=https://<host>/api` and re-run the Pages workflow.
 
-Create a PostgreSQL database and a container service from this repository. Configure the API service to build from `apps/api/Dockerfile`, listen on port `8000`, and use these environment variables:
+Scaling up later: set `plan: starter`, `RUN_MIGRATIONS_ON_START: "false"` and enable `preDeployCommand` in `render.yaml`; optionally move the frontend to Netlify (config already in `netlify.toml`).
 
-- `DATABASE_URL`: SQLAlchemy async URL, for example `postgresql+asyncpg://USER:PASSWORD@HOST:5432/DBNAME?ssl=require` (use the exact TLS options required by your provider).
-- `JWT_SECRET`: cryptographically random secret, at least 32 characters; use 48+ random bytes.
-- `CORS_ORIGINS`: exact public Netlify site origin, e.g. `https://YOUR-SITE.netlify.app`; no trailing slash.
-- `OPENAI_API_KEY`: provider key, kept only on the API service.
-- `LITELLM_MODEL`: model identifier supported by LiteLLM, e.g. `openai/gpt-4o-mini`.
+## Full topology
 
-Do not commit secrets or put provider keys in Netlify frontend variables.
+Topology:
 
-After the API is reachable, run database migrations once using the same image and environment:
+| Layer | Service | Notes |
+|---|---|---|
+| Frontend | Netlify | Static React/Vite build from `apps/web` (`netlify.toml`) |
+| API | Render (Docker) | `render.yaml` blueprint, image from `apps/api/Dockerfile` |
+| Database | Supabase PostgreSQL | Accessed only by the API, through the Supavisor **session** pooler |
+| Models | LiteLLM in the API | Provider keys live only in Render secrets |
 
-```bash
-alembic -c alembic.ini upgrade head
-```
+Secrets are typed directly into the Supabase/Render dashboards. Never paste them into chat, issues, commits or `VITE_*` variables.
 
-Verify:
-- `GET /health` returns service status.
-- `GET /readyz` returns HTTP 200 only when PostgreSQL accepts a query.
-- `GET /docs` is available for API inspection; disable public docs in a hardened production launch if not needed.
+## 1. Supabase database
 
-## 2. Deploy the frontend on Netlify
+1. Create a project in an EU region (e.g. Frankfurt `eu-central-1`). Save the database password in a password manager.
+2. In **SQL Editor**, create a dedicated application role (replace the password with a long random value generated locally):
 
-1. Import `coobox-89/galdus.ai` from GitHub in Netlify.
-2. Netlify reads `netlify.toml`: base directory `apps/web`, build command `npm run build`, publish directory `dist`.
-3. Add build environment variable `VITE_API_BASE_URL` with the API base URL ending in `/api`, e.g. `https://YOUR-API-HOST/api`.
-4. Deploy and open the generated `.netlify.app` URL.
-5. Add that exact origin to the API's `CORS_ORIGINS`, then redeploy/restart the API.
+   ```sql
+   create role galdus_app with login password 'REPLACE_WITH_RANDOM_PASSWORD';
+   grant usage, create on schema public to galdus_app;
+   ```
 
-The frontend uses the same API paths for auth and chat. The API base URL is public configuration; never put secrets in `VITE_*` variables.
+   `galdus_app` owns the tables it creates through migrations and is used by both migrations and the API. It is not a superuser and is not the Supabase `service_role`.
+3. In **Connect → Session pooler** copy the connection string. Render is IPv4-only, so use the session pooler (port `5432` on `*.pooler.supabase.com`), not the direct `db.<ref>.supabase.co` host (IPv6 unless the IPv4 add-on is enabled). Build the URL for the app role:
 
-## 3. Smoke test before inviting users
+   ```
+   postgresql+asyncpg://galdus_app.<PROJECT_REF>:<PASSWORD>@<POOLER_HOST>:5432/postgres?ssl=require
+   ```
 
-- Register a new account with a unique email and a password of at least 12 characters.
-- Sign out and sign back in.
-- Reload the page and verify session restoration.
-- Call `GET /api/v1/auth/organizations` with the session bearer token and verify only the user's workspace is returned.
-- Send a chat prompt and confirm a real model response.
-- Verify a second account cannot see the first account's organization.
-- Check API logs and database backup configuration.
+   Use the exact host shown in the dashboard. Only if you choose the **transaction** pooler (port `6543`) set `DB_TRANSACTION_POOLER=true`.
+4. Migration `0003_supabase_lockdown` enables row level security on every application table and revokes `anon`/`authenticated` access, so the Supabase Data API cannot read users or password hashes. Confirm afterwards in **Advisors → Security** that no table is reported as exposed.
+5. Enable backups appropriate to the plan (daily backups on paid plans; PITR if required) and run a restore test into a scratch project before launch.
 
-## 4. Production limitations
+## 2. API on Render
 
-The current MVP still needs rate limiting/brute-force controls, email verification, password reset, revocable sessions/refresh tokens, tenant-scoped authorization for future resources, audit logging, monitoring, automated backup/restore drills, and security review. Do not market the current scaffold as a fully hardened enterprise service.
+1. In Render choose **New → Blueprint**, select `coobox-89/galdus.ai`; Render reads `render.yaml`.
+2. Review plan and region (`starter`, `frankfurt`). A paid instance is needed for an always-on API and for `preDeployCommand`, which runs `alembic upgrade head` once per deploy before traffic switches.
+3. Fill the `sync: false` secrets in the dashboard:
+   - `DATABASE_URL`: session-pooler URL from step 1.3.
+   - `CORS_ORIGINS`: exact Netlify origin, e.g. `https://galdus-ai.netlify.app` (no trailing slash; comma-separate several).
+   - `OPENAI_API_KEY` (or another provider's standard variable, with `LITELLM_MODEL`/`ALLOWED_MODELS` set accordingly, e.g. `anthropic/...` with `ANTHROPIC_API_KEY`).
+   `JWT_SECRET` is generated by Render.
+4. With `ENVIRONMENT=production` the API refuses to start on unsafe settings (short JWT secret, wildcard/`http` CORS, default DB URL, default model not allowlisted) and hides `/docs`.
+5. Verify:
+   ```bash
+   curl https://<api-host>/health
+   curl https://<api-host>/readyz      # 200 only when Supabase answers
+   ```
 
-The Netlify site and the API/database are separate services. Netlify hosts the frontend; it does not automatically host the existing FastAPI container or PostgreSQL database.
+## 3. Frontend on Netlify
+
+1. The Netlify project `galdus-ai` (https://galdus-ai.netlify.app) exists. In **Project configuration → Build & deploy → Link repository** connect `coobox-89/galdus.ai`, branch `main`. Build settings come from `netlify.toml`.
+2. The public API URL is committed in `apps/web/.env.production` (`https://galdus-api.onrender.com/api`). If Render assigns a different hostname, change that file (or set `VITE_API_BASE_URL` in Netlify, which takes precedence) and redeploy.
+3. Put the resulting origin into Render `CORS_ORIGINS` and redeploy the API.
+
+## 4. Smoke test (must pass before inviting anyone)
+
+- Register two accounts in two workspaces; sign out/in; reload to confirm session restore.
+- Chat with each account; check `usage_events` rows are attributed to the right user/org.
+- Confirm account B cannot use account A's workspace (`X-Organization-Id` → 403).
+- Repeat wrong logins until HTTP 429 appears.
+- Test on a phone browser.
+- Check Render logs contain no prompts, tokens or keys.
+
+## 5. Known limits of this MVP
+
+- Rate limiting is in-process: run a **single** API instance or add a shared limiter before scaling out.
+- Access tokens are short-lived JWTs (30 min) without refresh/revocation; users sign in again on expiry.
+- No email verification or password reset yet (needs a transactional email provider).
+- Draft privacy, terms and acceptable-use pages exist at `/privacy`, `/terms`, `/acceptable-use`; the owner must complete the bracketed fields and approve them before public sign-ups.
+- Users can download their data (`GET /api/v1/auth/export`) and delete their account (`POST /api/v1/auth/account/delete`).

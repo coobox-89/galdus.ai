@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { API_BASE_URL } from './config';
+import { api } from './api';
+import { AcceptableUse, Privacy, Terms } from './legal';
+import { currentRoute, href } from './paths';
 import './style.css';
 
 const modules = [
@@ -11,104 +13,254 @@ const modules = [
   ['Governance', 'Manage access, policies and audit'],
 ];
 
-function App() {
+const TOKEN_KEY = 'galdus_token';
+const EXPIRY_KEY = 'galdus_token_expires_at';
+
+function loadToken() {
+  const token = sessionStorage.getItem(TOKEN_KEY) || '';
+  const expiresAt = Number(sessionStorage.getItem(EXPIRY_KEY) || 0);
+  if (!token || (expiresAt && Date.now() >= expiresAt)) {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(EXPIRY_KEY);
+    return '';
+  }
+  return token;
+}
+
+function AuthForm({ onAuthenticated, message, setMessage }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [organizationName, setOrganizationName] = useState('');
-  const [token, setToken] = useState(() => sessionStorage.getItem('galdus_token') || '');
-  const [user, setUser] = useState(null);
-  const [authMessage, setAuthMessage] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
+  const registering = mode === 'register';
 
-  useEffect(() => {
-    if (!token) return undefined;
-    let active = true;
-    async function restoreSession() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.status === 401) {
-          sessionStorage.removeItem('galdus_token');
-          if (active) {
-            setToken('');
-            setUser(null);
-            setAuthMessage('Your session expired. Please sign in again.');
-          }
-          return;
-        }
-        if (!response.ok) throw new Error('Unable to verify your session.');
-        const data = await response.json();
-        if (active) setUser(data);
-      } catch (error) {
-        if (active) setAuthMessage(error.message || 'Unable to restore your session.');
-      }
-    }
-    restoreSession();
-    return () => { active = false; };
-  }, [token]);
-
-  async function authenticate(event) {
+  async function submit(event) {
     event.preventDefault();
-    setAuthMessage('');
-    const registering = mode === 'register';
-    const endpoint = registering ? '/v1/auth/register' : '/v1/auth/login';
-    const payload = registering
-      ? { email, password, full_name: fullName, organization_name: organizationName }
-      : { email, password };
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Authentication failed');
-      sessionStorage.setItem('galdus_token', data.access_token);
-      setUser(data.user);
-      setToken(data.access_token);
-      setAuthMessage(registering ? 'Workspace created successfully.' : 'Signed in successfully.');
-      setPassword('');
-    } catch (error) {
-      setAuthMessage(error.message || 'Authentication failed.');
-    }
-  }
-
-  async function sendPrompt(event) {
-    event.preventDefault();
-    if (!prompt.trim() || busy) return;
+    setMessage('');
     setBusy(true);
-    setAnswer('');
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+      const data = await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        body: registering
+          ? { email, password, full_name: fullName, organization_name: organizationName }
+          : { email, password },
       });
-      const data = await response.json();
-      if (response.status === 401) {
-        logout();
-        throw new Error('Your session expired. Please sign in again.');
-      }
-      if (!response.ok) throw new Error(data.detail || 'Request failed');
-      setAnswer(data.content || '');
+      setPassword('');
+      onAuthenticated(data, registering ? 'Workspace created successfully.' : 'Signed in successfully.');
     } catch (error) {
-      setAnswer(`Connection error: ${error.message || 'Request failed'}`);
+      setMessage(error.message);
     } finally {
       setBusy(false);
     }
   }
 
-  function logout() {
-    sessionStorage.removeItem('galdus_token');
+  return (
+    <>
+      <h2>{registering ? 'Create your workspace' : 'Welcome back'}</h2>
+      <p>{registering ? 'Set up your personal or team workspace.' : 'Sign in to continue to your AI workspace.'}</p>
+      <form onSubmit={submit} aria-busy={busy}>
+        {registering && <>
+          <label>Full name<input value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" required maxLength={160} /></label>
+          <label>Workspace / organization name<input value={organizationName} onChange={e => setOrganizationName(e.target.value)} required minLength={2} maxLength={160} /></label>
+        </>}
+        <label>Email address<input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required /></label>
+        <label>Password{registering && <small> (at least 12 characters)</small>}
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete={registering ? 'new-password' : 'current-password'} required minLength={registering ? 12 : 1} maxLength={128} />
+        </label>
+        <button disabled={busy}>{busy ? 'Please wait…' : registering ? 'Create account' : 'Sign in'}</button>
+      </form>
+      <p className="switch-mode">
+        {registering ? 'Already have an account?' : 'New to Galdus.ai?'}{' '}
+        <button type="button" className="text-button" onClick={() => { setMode(registering ? 'login' : 'register'); setMessage(''); }}>
+          {registering ? 'Sign in' : 'Create an account'}
+        </button>
+      </p>
+    </>
+  );
+}
+
+function Workspace({ token, user, onExpired, onLogout }) {
+  const [organizations, setOrganizations] = useState([]);
+  const [organizationId, setOrganizationId] = useState('');
+  const [models, setModels] = useState([]);
+  const [model, setModel] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [prompt, setPrompt] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [usage, setUsage] = useState({ prompt_tokens: 0, completion_tokens: 0 });
+  const endRef = useRef(null);
+
+  const handle = useCallback((err) => {
+    if (err.status === 401) onExpired();
+    else setError(err.message);
+  }, [onExpired]);
+
+  useEffect(() => {
+    let active = true;
+    api('/v1/auth/organizations', { token })
+      .then(orgs => { if (active) { setOrganizations(orgs); setOrganizationId(orgs[0]?.id || ''); } })
+      .catch(handle);
+    return () => { active = false; };
+  }, [token, handle]);
+
+  useEffect(() => {
+    if (!organizationId) return undefined;
+    let active = true;
+    api('/v1/models', { token, organizationId })
+      .then(data => { if (active) { setModels(data.models); setModel(data.default); } })
+      .catch(handle);
+    return () => { active = false; };
+  }, [token, organizationId, handle]);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [messages, busy]);
+
+  async function send(event) {
+    event.preventDefault();
+    const content = prompt.trim();
+    if (!content || busy) return;
+    const next = [...messages, { role: 'user', content }];
+    setMessages(next);
+    setPrompt('');
+    setError('');
+    setBusy(true);
+    try {
+      const data = await api('/v1/chat/completions', {
+        token, organizationId, method: 'POST', body: { model: model || undefined, messages: next },
+      });
+      setMessages([...next, { role: 'assistant', content: data.content }]);
+      setUsage(u => ({
+        prompt_tokens: u.prompt_tokens + (data.usage?.prompt_tokens || 0),
+        completion_tokens: u.completion_tokens + (data.usage?.completion_tokens || 0),
+      }));
+    } catch (err) {
+      setMessages(messages);
+      setPrompt(content);
+      handle(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="workspace-head">
+        <div>
+          <h2>Your workspace</h2>
+          <p>{user ? `Signed in as ${user.full_name} (${user.email}).` : 'Verifying your session…'}</p>
+        </div>
+        <button type="button" className="secondary" onClick={onLogout}>Sign out</button>
+      </div>
+      <div className="controls">
+        <label>Workspace
+          <select value={organizationId} onChange={e => { setOrganizationId(e.target.value); setMessages([]); }} disabled={!organizations.length}>
+            {organizations.map(o => <option key={o.id} value={o.id}>{o.name} · {o.role}</option>)}
+          </select>
+        </label>
+        <label>Model
+          <select value={model} onChange={e => setModel(e.target.value)} disabled={!models.length}>
+            {models.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="conversation" aria-live="polite">
+        {messages.length === 0 && !busy && <p className="empty">Start a conversation. Messages are sent to the selected model through your Galdus.ai server.</p>}
+        {messages.map((m, i) => (
+          <div key={i} className={`bubble ${m.role}`}><b>{m.role === 'user' ? 'You' : 'Galdus.ai'}</b><pre>{m.content}</pre></div>
+        ))}
+        {busy && <div className="bubble assistant"><b>Galdus.ai</b><pre>Thinking…</pre></div>}
+        <div ref={endRef} />
+      </div>
+      <form onSubmit={send}>
+        <label className="sr-only" htmlFor="prompt">Message</label>
+        <textarea id="prompt" value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask Galdus.ai something…" maxLength={100000} required
+          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(e); }} />
+        <div className="row">
+          <button disabled={busy || !user || !organizationId}>{busy ? 'Sending…' : 'Send'}</button>
+          <button type="button" className="secondary" disabled={busy || !messages.length} onClick={() => setMessages([])}>New conversation</button>
+          {usage.prompt_tokens + usage.completion_tokens > 0 && <small className="usage">{usage.prompt_tokens + usage.completion_tokens} tokens this session</small>}
+        </div>
+      </form>
+      {error && <p role="alert" className="error">{error}</p>}
+      <AccountPanel token={token} onDeleted={onLogout} onError={handle} />
+    </>
+  );
+}
+
+function AccountPanel({ token, onDeleted, onError }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function exportData() {
+    try {
+      const data = await api('/v1/auth/export', { token });
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'galdus-account-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { onError(err); }
+  }
+
+  async function deleteAccount(event) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await api('/v1/auth/account/delete', { token, method: 'POST', body: { password } });
+      onDeleted('Your account and its data were deleted.');
+    } catch (err) {
+      if (err.status === 401 && err.message === 'Password is incorrect') onError({ message: err.message });
+      else onError(err);
+    } finally { setBusy(false); setPassword(''); }
+  }
+
+  return (
+    <details className="account" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary>Account and data</summary>
+      <div className="row"><button type="button" className="secondary" onClick={exportData}>Download my data</button></div>
+      <form onSubmit={deleteAccount}>
+        <label>Confirm your password to permanently delete your account and workspaces you own alone
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required maxLength={128} />
+        </label>
+        <button className="danger" disabled={busy}>{busy ? 'Deleting…' : 'Delete account'}</button>
+      </form>
+    </details>
+  );
+}
+
+function App() {
+  const [token, setToken] = useState(loadToken);
+  const [user, setUser] = useState(null);
+  const [message, setMessage] = useState('');
+
+  const clearSession = useCallback((note) => {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(EXPIRY_KEY);
     setToken('');
     setUser(null);
-    setAnswer('');
-    setAuthMessage('Signed out.');
+    setMessage(note);
+  }, []);
+  const expire = useCallback(() => clearSession('Your session expired. Please sign in again.'), [clearSession]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let active = true;
+    api('/v1/auth/me', { token })
+      .then(data => { if (active) setUser(data); })
+      .catch(err => { if (!active) return; if (err.status === 401) expire(); else setMessage(err.message); });
+    const expiresAt = Number(sessionStorage.getItem(EXPIRY_KEY) || 0);
+    const timer = expiresAt ? setTimeout(expire, Math.max(0, expiresAt - Date.now())) : undefined;
+    return () => { active = false; clearTimeout(timer); };
+  }, [token, expire]);
+
+  function onAuthenticated(data, note) {
+    sessionStorage.setItem(TOKEN_KEY, data.access_token);
+    sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + data.expires_in * 1000));
+    setUser(data.user);
+    setToken(data.access_token);
+    setMessage(note);
   }
 
   return (
@@ -119,48 +271,32 @@ function App() {
         <h1>Make AI work<br /><em>on your terms.</em></h1>
         <p className="lead">Models, agents, knowledge and automation in one open, self-hostable workspace.</p>
       </header>
-      <section className="modules">
+      <section className="modules" aria-label="Planned modules">
         {modules.map(([name, description], index) => (
           <article key={name}><b>0{index + 1}</b><h2>{name}</h2><p>{description}</p></article>
         ))}
       </section>
       <section className="playground">
-        <h2>{token ? 'Your workspace' : mode === 'register' ? 'Create your workspace' : 'Welcome back'}</h2>
-        {token ? (
-          <>
-            <p>{user?.full_name ? `Signed in as ${user.full_name} (${user.email}).` : 'Verifying your session…'}</p>
-            <button type="button" className="secondary" onClick={logout}>Sign out</button>
-            <form onSubmit={sendPrompt}>
-              <textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Galdus.ai something…" required />
-              <button disabled={busy || !user}>{busy ? 'Sending…' : 'Send prompt'}</button>
-            </form>
-            {answer && <pre>{answer}</pre>}
-          </>
-        ) : (
-          <>
-            <p>{mode === 'register' ? 'Set up your personal or team workspace.' : 'Sign in to continue to your AI workspace.'}</p>
-            <form onSubmit={authenticate}>
-              {mode === 'register' && <>
-                <input value={fullName} onChange={event => setFullName(event.target.value)} placeholder="Full name" autoComplete="name" required maxLength={160} />
-                <input value={organizationName} onChange={event => setOrganizationName(event.target.value)} placeholder="Workspace / organization name" required minLength={2} maxLength={160} />
-              </>}
-              <input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email address" autoComplete="email" required />
-              <input type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Password (at least 12 characters)" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} required minLength={mode === 'register' ? 12 : 1} maxLength={128} />
-              <button>{mode === 'register' ? 'Create account' : 'Sign in'}</button>
-            </form>
-            <p className="switch-mode">
-              {mode === 'register' ? 'Already have an account?' : 'New to Galdus.ai?'}{' '}
-              <button type="button" className="text-button" onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); setAuthMessage(''); }}>
-                {mode === 'register' ? 'Sign in' : 'Create an account'}
-              </button>
-            </p>
-          </>
-        )}
-        {authMessage && <p role="status" className="status">{authMessage}</p>}
+        {token
+          ? <Workspace token={token} user={user} onExpired={expire} onLogout={(note) => clearSession(typeof note === 'string' ? note : 'Signed out.')} />
+          : <AuthForm onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} />}
+        {message && !token && <p role="status" className="status">{message}</p>}
       </section>
-      <footer>Early development · Not production-ready · AGPL-3.0-only</footer>
+      <footer>
+        Early access · Chat is the only live module today ·{' '}
+        <a href={href('/privacy')}>Privacy</a> · <a href={href('/terms')}>Terms</a> · <a href={href('/acceptable-use')}>Acceptable use</a> ·{' '}
+        <a href="https://github.com/coobox-89/galdus.ai">Source (AGPL-3.0-only)</a>
+      </footer>
     </main>
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const routes = { '/privacy': Privacy, '/terms': Terms, '/acceptable-use': AcceptableUse };
+
+function Root() {
+  const Legal = routes[currentRoute()];
+  if (Legal) return <main><nav><a href={href('/')} className="brand"><strong>GALDUS<span>.AI</span></strong></a></nav><Legal /></main>;
+  return <App />;
+}
+
+createRoot(document.getElementById('root')).render(<Root />);
