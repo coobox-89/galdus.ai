@@ -1,5 +1,6 @@
 import React from 'react';
 import { href } from './paths';
+import { Mark, Wordmark } from './brand';
 
 // DRAFT legal texts. The owner must complete the bracketed fields and have them
 // reviewed before opening public sign-ups.
@@ -9,11 +10,12 @@ const UPDATED = '27 November 2026 (draft)';
 function Page({ title, children }) {
   return (
     <article className="legal">
-      <p className="eyebrow">LAST UPDATED · {UPDATED}</p>
+      <a href={href('/')} style={{ display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none', color: 'inherit' }}><Mark size={28} /><Wordmark /></a>
+      <p className="muted small">Last updated {UPDATED}</p>
       <h1>{title}</h1>
       <p className="draft">Draft pending owner and legal review.</p>
       {children}
-      <p><a href={href('/')}>← Back to Galdus.ai</a></p>
+      <p><a href={href('/')}>Back to Galdus.ai</a></p>
     </article>
   );
 }

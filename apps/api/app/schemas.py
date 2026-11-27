@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, Field, field_validator
 
 MAX_TOTAL_CHARS = 200_000
@@ -9,6 +11,7 @@ class Message(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    connection_id: uuid.UUID | None = None
     model: str | None = Field(default=None, max_length=200)
     messages: list[Message] = Field(min_length=1, max_length=100)
 

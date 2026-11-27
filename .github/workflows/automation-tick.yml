@@ -1,0 +1,26 @@
+name: Automation scheduler
+
+# Wakes the API and runs due automations. Requires repository secret
+# GALDUS_AUTOMATION_TOKEN (same value as AUTOMATION_TOKEN on the API host) and
+# optional repository variable GALDUS_API_URL (defaults to the Render URL).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run due automations
+        env:
+          TOKEN: ${{ secrets.GALDUS_AUTOMATION_TOKEN }}
+          API: ${{ vars.GALDUS_API_URL || 'https://galdus-api.onrender.com' }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "GALDUS_AUTOMATION_TOKEN not set; skipping"; exit 0; fi
+          # Free instances may be asleep: wake them first.
+          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors "$API/health" > /dev/null
+          curl -fsS --max-time 240 -X POST -H "Authorization: Bearer $TOKEN" "$API/api/v1/automation/tick"

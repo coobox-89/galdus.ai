@@ -261,3 +261,13 @@ Verified locally (Python 3.13, PostgreSQL 16, Node 22): 43 API tests passing inc
 Added: model allowlist, usage tracking and daily token budget (`usage_events`, migration 0002), Supabase Data API lockdown (RLS + revokes, migration 0003), rate limiting, organization membership dependency, production config validation, security headers, pooler-aware DB engine, multi-turn chat UI with workspace/model selection, `render.yaml`, npm lockfile + `npm ci`, CI with PostgreSQL service and Docker build, desktop icons.
 
 Not yet done / not verified: no Supabase project, Render service or Netlify site exists for Galdus; no real provider call has been made; Docker image and desktop builds are verified only by CI once pushed.
+
+## 13. Status update — 2026-11-27 (v0.4: platform modules and brand redesign)
+
+Branches stacked for review: `feat/models-byok` (#3) → `feat/knowledge-agents-apps` (#4) → `feat/platform-phase3` → `feat/brand-ux-redesign`.
+
+Modules now implemented and tested (83 API tests on PostgreSQL + pgvector): Models (BYOK, 12 providers, encrypted keys), Knowledge (upload/URL import, semantic or keyword search, citations), Agents (instructions, knowledge, built-in tools, MCP tools, run history with steps), Apps (8 templates), Automation (cron, incoming webhooks, outgoing delivery, scheduler via GitHub Actions), Governance (roles, invitations, audit log, workspace token limit, guardrails), Platform admin.
+
+Frontend redesigned on the Galdus brand identity (Montserrat, Blue Night #0B1F3B, Lime #B6FF00, Energy Yellow #FFC107, Cloud White #F8FAFC). Motion: logo assembly on the landing, shared-layout lime "pixel" as the active-navigation indicator, page transitions, pixel loader, toasts, command palette (Ctrl+K). Respects prefers-reduced-motion.
+
+Not yet built: SSO (OIDC/SAML), Drive/SharePoint/S3 sync connectors, code sandbox, streaming responses, email delivery (invitations are shared as links), refresh tokens.
