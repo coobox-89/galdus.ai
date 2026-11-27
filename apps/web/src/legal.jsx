@@ -1,4 +1,5 @@
 import React from 'react';
+import { href } from './paths';
 
 // DRAFT legal texts. The owner must complete the bracketed fields and have them
 // reviewed before opening public sign-ups.
@@ -12,7 +13,7 @@ function Page({ title, children }) {
       <h1>{title}</h1>
       <p className="draft">Draft pending owner and legal review.</p>
       {children}
-      <p><a href="/">← Back to Galdus.ai</a></p>
+      <p><a href={href('/')}>← Back to Galdus.ai</a></p>
     </article>
   );
 }

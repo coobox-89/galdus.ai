@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
 import { AcceptableUse, Privacy, Terms } from './legal';
+import { currentRoute, href } from './paths';
 import './style.css';
 
 const modules = [
@@ -283,7 +284,7 @@ function App() {
       </section>
       <footer>
         Early access · Chat is the only live module today ·{' '}
-        <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/acceptable-use">Acceptable use</a> ·{' '}
+        <a href={href('/privacy')}>Privacy</a> · <a href={href('/terms')}>Terms</a> · <a href={href('/acceptable-use')}>Acceptable use</a> ·{' '}
         <a href="https://github.com/coobox-89/galdus.ai">Source (AGPL-3.0-only)</a>
       </footer>
     </main>
@@ -293,8 +294,8 @@ function App() {
 const routes = { '/privacy': Privacy, '/terms': Terms, '/acceptable-use': AcceptableUse };
 
 function Root() {
-  const Legal = routes[window.location.pathname.replace(/\/$/, '')];
-  if (Legal) return <main><nav><a href="/" className="brand"><strong>GALDUS<span>.AI</span></strong></a></nav><Legal /></main>;
+  const Legal = routes[currentRoute()];
+  if (Legal) return <main><nav><a href={href('/')} className="brand"><strong>GALDUS<span>.AI</span></strong></a></nav><Legal /></main>;
   return <App />;
 }
 

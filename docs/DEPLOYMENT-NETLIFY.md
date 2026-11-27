@@ -1,5 +1,19 @@
 # Public MVP deployment runbook
 
+## Preview launch (zero cost)
+
+| Layer | Service |
+|---|---|
+| Frontend | GitHub Pages, `https://coobox-89.github.io/galdus.ai/` (`.github/workflows/pages.yml`) |
+| API | Render **free** plan, `render.yaml` (sleeps after ~15 min idle; cold start 30-60 s; migrations run at container start) |
+| Database | Supabase free project `galdus-ai` (Frankfurt) |
+
+One-time setup: GitHub **Settings → Pages → Source: GitHub Actions**; Supabase password for `galdus_app`; Render **New → Blueprint** with `DATABASE_URL` and `OPENAI_API_KEY`. If Render does not assign `galdus-api.onrender.com`, set the repository variable `GALDUS_API_BASE_URL=https://<host>/api` and re-run the Pages workflow.
+
+Scaling up later: set `plan: starter`, `RUN_MIGRATIONS_ON_START: "false"` and enable `preDeployCommand` in `render.yaml`; optionally move the frontend to Netlify (config already in `netlify.toml`).
+
+## Full topology
+
 Topology:
 
 | Layer | Service | Notes |
