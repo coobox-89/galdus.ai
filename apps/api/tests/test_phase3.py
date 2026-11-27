@@ -167,6 +167,8 @@ def test_scheduled_and_webhook_automations(client, monkeypatch):
     auto = client.post("/api/v1/automations", headers=h, json={
         "name": "Morning report", "agent_id": a["id"], "input": "Write the report", "cron": "0 7 * * *", "webhook": True}).json()
     assert auto["next_run_at"] and auto["webhook_path"].startswith("/api/v1/hooks/")
+    now = client.post(f"/api/v1/automations/{auto['id']}/run", headers=h).json()
+    assert now["status"] == "succeeded" and now["output"] == "Daily report ready"
 
     assert client.post("/api/v1/automation/tick").status_code == 401
     assert client.post("/api/v1/automation/tick", headers={"Authorization": "Bearer wrong"}).status_code == 401
@@ -192,6 +194,16 @@ def test_scheduled_and_webhook_automations(client, monkeypatch):
     assert client.post("/api/v1/hooks/" + "x" * 43, json={}).status_code == 404
 
     runs = client.get(f"/api/v1/automations/{auto['id']}/runs", headers=h).json()
-    assert {r["trigger"] for r in runs} == {"schedule", "webhook"}
+    assert {r["trigger"] for r in runs} == {"manual", "schedule", "webhook"}
     listed = client.get("/api/v1/automations", headers=h).json()[0]
     assert listed["last_status"] == "succeeded" and "webhook_path" not in listed
+
+
+@db
+def test_admin_setup_lists_names_never_secrets(client, monkeypatch):
+    from app.config import settings as s
+    monkeypatch.setattr(s, "admin_emails", "boss@example.com")
+    monkeypatch.setattr(s, "github_client_id", "gh-id")
+    monkeypatch.setattr(s, "github_client_secret", "very-secret-value-123")
+    _, h = register(client)
+    assert client.get("/api/v1/admin/setup", headers=h).status_code == 403

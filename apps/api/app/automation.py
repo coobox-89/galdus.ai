@@ -137,6 +137,22 @@ async def delete_automation(automation_id: uuid.UUID, membership: Membership = D
     await db.commit()
 
 
+@router.post("/automations/{automation_id}/run")
+async def run_now(automation_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    """Run an automation once, now, to check it works (does not change its schedule)."""
+    require_role(membership, "owner", "admin")
+    enforce(f"run-now:{membership.user_id}", 10)
+    a = await db.scalar(select(Automation).where(Automation.id == automation_id, Automation.organization_id == membership.organization_id))
+    if not a:
+        raise HTTPException(status_code=404, detail="Automation not found in this workspace")
+    if not a.enabled:
+        raise HTTPException(status_code=409, detail="Resume the automation to run it")
+    run = await run_automation(db, a, "manual")
+    if not run:
+        raise HTTPException(status_code=409, detail="The automation could not run: its agent or owner no longer exists")
+    return {"run_id": str(run.id), "status": run.status, "output": run.output, "error": run.error}
+
+
 @router.get("/automations/{automation_id}/runs")
 async def automation_runs(automation_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     await get_automation(db, membership, automation_id)

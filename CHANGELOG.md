@@ -2,6 +2,15 @@
 
 # Changelog
 
+## 0.8.0 (2026-11-27)
+
+- Security review: sessions revoked on password change, password reset and the new "Sign out everywhere"; Google and GitHub sign-in bound to the browser that started it; only owners and admins change knowledge or use connected drives; chat images checked by file signature; dependency audit in CI.
+- Automation wizard: task, trigger (schedule, webhook or both), delivery to Slack, Teams or any webhook with step-by-step guides, review, and a ready screen with the webhook address and "Try it now". Automations also get a "Run now" button.
+- MCP server wizard: what MCP is, connect and list tools, choose allowed tools (actions that change data start off), ready.
+- Platform admin, Setup: one card per operator feature (encryption key, admins, Google, GitHub, Microsoft, email, scheduler) with its status and a guided wizard: console steps, redirect URIs to copy, Render variables, check again.
+- Cloud drives that are not enabled link platform admins straight to Setup.
+- API: `POST /api/v1/automations/{id}/run`, `GET /api/v1/admin/setup` (names and addresses only, never secret values), `POST /api/v1/auth/logout-all`.
+
 ## 0.7.0 (2026-11-27)
 
 - Branded dropdowns everywhere: every select in the console (assistant, model, knowledge, workspace, roles, agents, schedules) uses the Galdus design, with keyboard navigation, search on long lists and grouped options.

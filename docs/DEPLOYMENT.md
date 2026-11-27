@@ -2,6 +2,8 @@
 
 # Deployment runbook
 
+> Tip: once you are signed in as a platform admin, **Platform admin, Setup** shows which features are on and walks you through each one (redirect URIs to copy, Render variables, check again).
+
 ## Preview launch (zero cost)
 
 | Layer | Service |
