@@ -31,6 +31,10 @@ The web container serves the built frontend through Nginx on container port 80 (
 
 Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
 
+## Project handoff for Claude
+
+For a complete transfer of project context, architecture decisions, current implementation, open engineering tasks, deployment plan and owner actions, read [docs/CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md). It is designed to be given to Claude together with access to this GitHub repository.
+
 ## Public MVP deployment
 
 See [the Netlify + dedicated API deployment guide](docs/DEPLOYMENT-NETLIFY.md) for the first public topology, required environment variables, database migrations, and smoke tests. The repository includes `netlify.toml` for the React/Vite frontend; FastAPI and PostgreSQL must be deployed separately.
