@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react';
-import { BASE } from './paths';
+// Imported so Vite fingerprints the file names: a new artwork is never served from an old cache.
+import plate1000 from './assets/hero/plate-1000.webp';
+import plate1672 from './assets/hero/plate-1672.webp';
+import plate2508 from './assets/hero/plate-2508.webp';
+import armMask from './assets/hero/arm-mask.png';
 
 // Full-bleed scene reconstructed from the approved mockup (UI removed), with motion layers
 // aligned to the photo in percentages so they stay on the arm at every screen size.
@@ -54,7 +58,7 @@ export function Backdrop() {
     const r = seeded(7);
     return NODES.map(([x, y], k) => ({ x, y, k, s: 3 + Math.floor(r() * 3), d: r() * 6, t: 1.6 + r() * 2.2, dx: (r() - .5) * 14, dy: -4 - r() * 14 }));
   }, []);
-  const src = n => `${BASE}/hero/plate-${n}.webp`;
+  const src = n => ({ 1000: plate1000, 1672: plate1672, 2508: plate2508 })[n];
 
   return (
     <div className="hero-bg" aria-hidden="true">
@@ -66,7 +70,7 @@ export function Backdrop() {
           <img src={src(1672)} srcSet={`${src(1000)} 1000w, ${src(1672)} 1672w, ${src(2508)} 2508w`} sizes="(max-width: 900px) 200vw, 110vw"
             alt="" fetchPriority="high" draggable="false" />
           {!reduce && (
-            <div className="arm-fx" style={{ '--am': `url(${BASE}/hero/arm-mask.png)`, '--plate': `url(${src(1672)})` }}>
+            <div className="arm-fx" style={{ '--am': `url(${armMask})`, '--plate': `url(${src(1672)})` }}>
               <i className="arm-glow" /><i className="arm-sweep" /><i className="arm-pulse" />
               {sparks.map(p => (
                 <motion.i key={p.k} className="spark" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s }}
