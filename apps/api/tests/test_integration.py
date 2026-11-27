@@ -195,3 +195,28 @@ def test_export_and_delete_account(client, monkeypatch):
     assert client.post("/api/v1/auth/account/delete", headers=headers, json={"password": PASSWORD}).status_code == 204
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
     assert client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD}).status_code == 401
+
+
+def test_admin_console_requires_platform_admin(client, monkeypatch):
+    monkeypatch.setattr(chat_module.litellm, "acompletion", fake_completion())
+    admin_email = f"admin-{uuid.uuid4().hex[:8]}@example.com"
+    monkeypatch.setattr(settings, "admin_emails", admin_email.upper())
+    _, admin = register(client, email=admin_email, org="Ops")
+    _, user = register(client, org="Customer")
+    client.post("/api/v1/chat/completions", headers=user, json={"messages": [{"role": "user", "content": "hi"}]})
+
+    assert client.get("/api/v1/auth/me", headers=admin).json()["is_platform_admin"] is True
+    assert client.get("/api/v1/auth/me", headers=user).json()["is_platform_admin"] is False
+    for path in ("overview", "users", "organizations", "usage"):
+        assert client.get(f"/api/v1/admin/{path}", headers=user).status_code == 403
+        assert client.get(f"/api/v1/admin/{path}", headers=admin).status_code == 200, path
+
+    overview = client.get("/api/v1/admin/overview", headers=admin).json()
+    assert overview["users"] >= 2 and overview["tokens_total"] >= 12
+    users = client.get("/api/v1/admin/users", headers=admin).json()
+    assert all("password" not in k for row in users for k in row)
+    usage = client.get("/api/v1/admin/usage", headers=admin).json()
+    assert any(r["model"] == "openai/gpt-4o-mini" for r in usage)
+
+    me_id = client.get("/api/v1/auth/me", headers=admin).json()["id"]
+    assert client.post(f"/api/v1/admin/users/{me_id}/admin", headers=admin, json={"is_platform_admin": False}).status_code == 400

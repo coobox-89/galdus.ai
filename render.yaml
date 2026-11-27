@@ -34,5 +34,7 @@ services:
         value: openai/gpt-4o-mini
       - key: OPENAI_API_KEY
         sync: false
+      - key: ADMIN_EMAILS
+        sync: false   # your email: that account becomes platform admin when it registers
       - key: DAILY_TOKEN_BUDGET_PER_USER
         value: "200000"

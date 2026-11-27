@@ -44,6 +44,7 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str
+    is_platform_admin: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -103,11 +104,21 @@ def make_slug(name: str) -> str:
     return f"{base}-{uuid.uuid4().hex[:8]}"
 
 
+def _user_response(user: User) -> UserResponse:
+    return UserResponse(id=user.id, email=user.email, full_name=user.full_name, is_platform_admin=bool(user.is_platform_admin))
+
+
+async def require_platform_admin(user: User = Depends(current_user)) -> User:
+    if not user.is_platform_admin:
+        raise HTTPException(status_code=403, detail="Platform administrator access required")
+    return user
+
+
 def _token_response(user: User) -> TokenResponse:
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
         expires_in=settings.jwt_expire_minutes * 60,
-        user=UserResponse(id=user.id, email=user.email, full_name=user.full_name),
+        user=_user_response(user),
     )
 
 
@@ -117,7 +128,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.scalar(select(User).where(User.email == email))
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists")
-    user = User(email=email, full_name=body.full_name, password_hash=hash_password(body.password))
+    user = User(email=email, full_name=body.full_name, password_hash=hash_password(body.password),
+                is_platform_admin=email in settings.admin_email_list)
     org = Organization(name=body.organization_name, slug=make_slug(body.organization_name))
     db.add_all([user, org])
     try:
@@ -146,7 +158,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 async def me(user: User = Depends(current_user)):
-    return UserResponse(id=user.id, email=user.email, full_name=user.full_name)
+    return _user_response(user)
 
 
 @router.get("/organizations", response_model=list[OrganizationResponse])
