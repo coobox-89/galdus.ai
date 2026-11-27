@@ -1,6 +1,6 @@
 [package]
 name = "galdus-ai-desktop"
-version = "0.6.0"
+version = "0.6.1"
 description = "Galdus.ai desktop application"
 authors = []
 edition = "2021"

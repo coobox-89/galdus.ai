@@ -2,6 +2,14 @@
 
 # Changelog
 
+## 0.6.1 (2026-11-27)
+
+- Sign-in footer redesigned: logo with gradient tagline, legal links as pills (two by two on phones), early-access badge and copyright.
+- Ultra-wide screens keep the whole warrior in view: the backdrop crop is capped, its edges feathered and the sides filled with a blurred copy of the scene.
+- Arm motion stays on the arm: effects are masked to the traced arm silhouette, the glow and light wave follow the arm's own mesh and sparks twinkle on its nodes.
+- The lime face stripe now ends above the beard with a smeared, powdery fade; the beard below is restored.
+- Brand images (banner, page headers, social preview, sign-in screenshot) regenerated from the updated artwork.
+
 ## 0.6.0 (2026-11-27)
 
 - New sign-in screen built on the brand artwork: full-bleed scene with legibility gradients, motion on the AI arm, snow and parallax, responsive from phones to wide screens.

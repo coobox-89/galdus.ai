@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://coobox-89.github.io/galdus.ai/"><img alt="Live preview" src="https://img.shields.io/badge/live%20preview-open-B6FF00?style=for-the-badge&labelColor=0B1F3B"></a>
   <a href="LICENSE"><img alt="License AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-F8FAFC?style=for-the-badge&labelColor=0B1F3B"></a>
-  <a href="CHANGELOG.md"><img alt="Version 0.6.0" src="https://img.shields.io/badge/version-0.6.0-FFC107?style=for-the-badge&labelColor=0B1F3B"></a>
+  <a href="CHANGELOG.md"><img alt="Version 0.6.1" src="https://img.shields.io/badge/version-0.6.1-FFC107?style=for-the-badge&labelColor=0B1F3B"></a>
   <a href="https://github.com/coobox-89/galdus.ai/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/coobox-89/galdus.ai/ci.yml?branch=main&style=for-the-badge&label=ci&labelColor=0B1F3B&color=3FD47A"></a>
 </p>
 
@@ -29,7 +29,7 @@
 Galdus.ai brings models, knowledge, agents, automation and governance together in one workspace you can host yourself. It is model agnostic by design: every workspace connects its own providers with its own keys, from OpenAI and Anthropic to open-weight models such as Qwen, DeepSeek, Llama and Mistral running on your own hardware.
 
 > [!NOTE]
-> **Early access.** Galdus.ai 0.6 runs as a free public preview on GitHub Pages, Render and Supabase. The free API sleeps when idle, so the first request after a pause can take up to a minute.
+> **Early access.** Galdus.ai 0.6.1 runs as a free public preview on GitHub Pages, Render and Supabase. The free API sleeps when idle, so the first request after a pause can take up to a minute.
 
 ## What is inside
 
