@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'motion/react';
 import { useWs } from './workspace';
-import { BookOpen, Bot, Coins, Cpu, MessageSquare, Plug, SendHorizontal } from 'lucide-react';
+import { BookOpen, Bot, Coins, Cpu, MessageSquare, Plug } from 'lucide-react';
 import { Mark } from './brand';
 import vikingPhone from './assets/hero/viking-phone.webp';
 import { CountUp, fmt, rise, stagger, Status, when } from './ui';
@@ -90,28 +90,38 @@ const SCENE_CHAT = [
 
 function VikingScene() {
   const reduce = useReducedMotion();
-  const list = { hidden: {}, show: { transition: { delayChildren: .3, staggerChildren: .55 } } };
-  const item = { hidden: { opacity: 0, y: 8, scale: .97 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: .3, ease: [.2, .7, .2, 1] } } };
+  const ref = useRef(null);
+  const inView = useInView(ref, { amount: .3 });
+  const [shown, setShown] = useState(reduce ? SCENE_CHAT.length : 0);
+  useEffect(() => {
+    if (reduce) { setShown(SCENE_CHAT.length); return undefined; }
+    if (!inView) return undefined;
+    // Plays the conversation, holds on the punchline, then starts again.
+    const t = setTimeout(() => setShown(n => (n >= SCENE_CHAT.length ? 0 : n + 1)),
+      shown === 0 ? 700 : shown >= SCENE_CHAT.length ? 6000 : 1500);
+    return () => clearTimeout(t);
+  }, [shown, inView, reduce]);
   return (
-    <figure className="scene" aria-label="Example conversation between a Viking and Galdus">
-      <div className="scene-card">
-        <div className="scene-head" aria-hidden="true">
-          <Mark size={22} interactive={false} />
-          <b>Galdus</b>
-          <span className="scene-live"><i />online</span>
-        </div>
-        <motion.ol className="scene-chat" variants={list} initial={reduce ? 'show' : 'hidden'} whileInView="show" viewport={{ once: true, amount: .15 }}>
-          {SCENE_CHAT.map(([who, text], i) => (
-            <motion.li key={i} className={`sbub ${who}`} variants={reduce ? undefined : item}>
-              <b className="sbub-who">{who === 'viking' ? 'Vichingo' : 'Galdus'}:</b> {text}
-            </motion.li>
-          ))}
-        </motion.ol>
-        <div className="scene-input" aria-hidden="true"><span>Scrivi a Galdus…</span><SendHorizontal size={15} /></div>
+    <figure className="scene" ref={ref}>
+      <span className="scene-glow" aria-hidden="true" />
+      <img className="scene-viking" src={vikingPhone} alt="A smiling Viking with the Galdus lime warpaint, chatting with Galdus on his phone"
+        width="393" height="532" loading="lazy" decoding="async" />
+      <div className="scene-bubble" aria-hidden="true">
+        <div className="scene-head"><Mark size={16} interactive={false} /><b>Galdus</b><span className="scene-live"><i />online</span></div>
+        <ol className={`scene-chat ${reduce ? 'static' : ''}`}>
+          <AnimatePresence initial={false}>
+            {SCENE_CHAT.slice(0, shown).map(([who, text], i) => (
+              <motion.li key={i} layout={!reduce} className={`sbub ${who}`}
+                initial={reduce ? false : { opacity: 0, y: 10, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, transition: { duration: .2 } }}
+                transition={{ duration: .3, ease: [.2, .7, .2, 1] }}>
+                <b className="sbub-who">{who === 'viking' ? 'Vichingo' : 'Galdus'}:</b> {text}
+              </motion.li>))}
+          </AnimatePresence>
+        </ol>
       </div>
-      <div className="scene-viking">
-        <img src={vikingPhone} alt="A smiling Viking with the Galdus lime warpaint, reading the chat on his phone" width="393" height="532" loading="lazy" decoding="async" />
-      </div>
+      <figcaption className="sr-only">
+        <ol>{SCENE_CHAT.map(([who, text], i) => <li key={i}>{who === 'viking' ? 'Vichingo' : 'Galdus'}: {text}</li>)}</ol>
+      </figcaption>
     </figure>
   );
 }
