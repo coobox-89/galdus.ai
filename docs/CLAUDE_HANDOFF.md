@@ -253,3 +253,11 @@ For each work session, provide:
 7. Remaining risks/blockers.
 
 **Do not claim Galdus.ai is deployed, production-ready, or feature-complete until the definition of done above is satisfied.**
+
+## 12. Status update — 2026-11-27 (v0.3.0 hardening)
+
+Verified locally (Python 3.13, PostgreSQL 16, Node 22): 43 API tests passing including HTTP integration tests against a real migrated database; Alembic upgrade → downgrade → upgrade → `alembic check` clean; `npm ci && npm run build` succeeds; bundle contains no server secrets.
+
+Added: model allowlist, usage tracking and daily token budget (`usage_events`, migration 0002), Supabase Data API lockdown (RLS + revokes, migration 0003), rate limiting, organization membership dependency, production config validation, security headers, pooler-aware DB engine, multi-turn chat UI with workspace/model selection, `render.yaml`, npm lockfile + `npm ci`, CI with PostgreSQL service and Docker build, desktop icons.
+
+Not yet done / not verified: no Supabase project, Render service or Netlify site exists for Galdus; no real provider call has been made; Docker image and desktop builds are verified only by CI once pushed.

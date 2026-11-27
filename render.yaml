@@ -1,0 +1,34 @@
+# Render Blueprint for the Galdus.ai API. Review plan/region before applying:
+# a paid instance is required for an always-on service and for preDeployCommand.
+services:
+  - type: web
+    name: galdus-api
+    runtime: docker
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: starter
+    healthCheckPath: /readyz
+    # Migrations run once per deploy, before the new version receives traffic.
+    preDeployCommand: alembic upgrade head
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false   # Supabase session-pooler URL, entered in the Render dashboard
+      - key: CORS_ORIGINS
+        sync: false   # e.g. https://galdus-ai.netlify.app
+      - key: LITELLM_MODEL
+        value: openai/gpt-4o-mini
+      - key: ALLOWED_MODELS
+        value: openai/gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DAILY_TOKEN_BUDGET_PER_USER
+        value: "200000"
