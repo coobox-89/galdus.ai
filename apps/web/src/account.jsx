@@ -26,8 +26,14 @@ export function AccountPage({ go }) {
   }
   async function changePw(e) {
     e.preventDefault();
-    try { await ws.call('/v1/auth/password/change', { method: 'POST', body: { ...pw, current_password: pw.current_password || null } });
-      setPw({ current_password: '', new_password: '' }); setPrefs(p => ({ ...p, has_password: true })); ws.toast('Password updated.'); } catch (err) { ws.onError(err); }
+    try { const r = await ws.call('/v1/auth/password/change', { method: 'POST', body: { ...pw, current_password: pw.current_password || null } });
+      setPw({ current_password: '', new_password: '' }); setPrefs(p => ({ ...p, has_password: true }));
+      if (r.access_token) ws.onToken?.(r);
+      ws.toast('Password updated. Other devices were signed out.'); } catch (err) { ws.onError(err); }
+  }
+  async function signOutEverywhere() {
+    if (!window.confirm('Sign out of Galdus on every device, including this one?')) return;
+    try { await ws.call('/v1/auth/logout-all', { method: 'POST' }); ws.onSignOut?.('You were signed out on every device.'); } catch (err) { ws.onError(err); }
   }
   async function exportData() {
     try {
@@ -81,6 +87,9 @@ export function AccountPage({ go }) {
           <div className="panel form"><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Download size={17} /> Your data</h3>
             <p className="muted small" style={{ margin: 0 }}>Download everything Galdus stores about you: profile, workspaces and usage records.</p>
             <div><button type="button" className="btn ghost" onClick={exportData}>Download my data</button></div></div>
+          <div className="panel form"><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><KeyRound size={17} /> Sessions</h3>
+            <p className="muted small" style={{ margin: 0 }}>Lost a device or signed in on a shared computer? End every session at once.</p>
+            <div><button type="button" className="btn ghost" onClick={signOutEverywhere}>Sign out everywhere</button></div></div>
           <form className="panel form" onSubmit={remove}><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Trash2 size={17} /> Delete account</h3>
             <p className="muted small" style={{ margin: 0 }}>This cannot be undone. Workspaces you share with others stay with them.</p>
             {prefs?.has_password !== false && <label className="field">Confirm with your password<input type="password" value={del} onChange={e => setDel(e.target.value)} autoComplete="current-password" required maxLength={128} /></label>}

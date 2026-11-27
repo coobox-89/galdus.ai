@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from .auth import create_access_token, decode_access_token, hash_password, verify_password
+from .auth import create_access_token, decode_access_claims, hash_password, verify_password
 from .config import settings
 from .db import get_db
 from .models import Membership, Organization, User
@@ -67,11 +67,14 @@ def _unauthorized(detail: str = "Invalid or expired access token") -> HTTPExcept
 
 async def current_user(token: str = Depends(bearer), db: AsyncSession = Depends(get_db)) -> User:
     try:
-        user_id = uuid.UUID(decode_access_token(token))
+        subject, issued_at = decode_access_claims(token)
+        user_id = uuid.UUID(subject)
     except (jwt.InvalidTokenError, ValueError, RuntimeError):
         raise _unauthorized()
     user = await db.scalar(select(User).where(User.id == user_id))
     if not user:
+        raise _unauthorized()
+    if user.tokens_valid_after and issued_at < int(user.tokens_valid_after.timestamp()):
         raise _unauthorized()
     return user
 

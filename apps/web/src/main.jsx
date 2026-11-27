@@ -74,7 +74,9 @@ function App() {
   if (!token) return <Landing onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} resetToken={resetToken} />;
   if (!user) return null;
   return (
-    <WorkspaceProvider token={token} user={user} onExpired={expire}>
+    <WorkspaceProvider token={token} user={user} onExpired={expire}
+      onToken={data => { sessionStorage.setItem(TOKEN_KEY, data.access_token); sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + data.expires_in * 1000)); setToken(data.access_token); }}
+      onSignOut={note => clear(note)}>
       <Shell onLogout={note => clear(typeof note === 'string' ? note : '')} />
     </WorkspaceProvider>
   );
