@@ -1,0 +1,19 @@
+[package]
+name = "galdus-ai-desktop"
+version = "0.2.0"
+description = "Galdus.ai desktop application"
+authors = []
+edition = "2021"
+
+[lib]
+name = "galdus_ai_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
