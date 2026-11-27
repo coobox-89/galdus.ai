@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, KeyRound, Sparkles, Trash2 } from 'lucide-react';
+import { Download, KeyRound, LogOut, Sparkles, Trash2 } from 'lucide-react';
 import { useWs } from './workspace';
 import { PageHead } from './ui';
 import { ProfileCard, SecurityCard } from './profile';
@@ -60,9 +60,9 @@ export function AccountPage({ go }) {
           <div><button type="button" className="btn" onClick={accept}>Accept invitation</button></div></div>)}
       <ProfileCard />
       {prefs && (
-        <form className="panel form" onSubmit={savePrefs}>
-          <div className="panel-head"><div><h2 style={{ display: 'flex', gap: 10, alignItems: 'center' }}><Sparkles size={20} color="#B6FF00" /> Personalise your chat</h2>
-            <p>Galdus adds this to every conversation, so answers fit you without repeating yourself.</p></div></div>
+        <form className="panel form acct-card" onSubmit={savePrefs}>
+          <div className="acct-head"><h3 className="acct-title"><Sparkles size={18} /> Personalise your chat</h3></div>
+          <p className="acct-desc">Galdus adds this to every conversation, so answers fit you without repeating yourself.</p>
           <label className="field">Your name<input value={prefs.full_name} onChange={e => setPrefs({ ...prefs, full_name: e.target.value })} required maxLength={160} /></label>
           <label className="field">What should Galdus know about you?
             <small>Your role, company, tools you use, languages, things to avoid.</small>
@@ -74,31 +74,35 @@ export function AccountPage({ go }) {
               <button key={id} type="button" className={`persona ${prefs.response_style === id ? 'active' : ''}`} onClick={() => setPrefs({ ...prefs, response_style: id })}>
                 <b>{name}</b><small>{d}</small></button>))}</div>
           </div>
-          <div><button className="btn">Save preferences</button></div>
+          <div className="acct-actions"><button className="btn">Save preferences</button></div>
         </form>)}
-      <div className="cols">
+
+      <h2 className="acct-group">Sign-in and security</h2>
+      <div className="acct-grid two">
         <SecurityCard />
         {prefs && (
-          <form className="panel form" onSubmit={changePw}>
-            <h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><KeyRound size={17} /> {prefs.has_password ? 'Change password' : 'Set a password'}</h3>
-            {prefs.linked_providers.length > 0 && <p className="small muted" style={{ margin: 0 }}>Signed in with {prefs.linked_providers.join(' and ')}.{!prefs.has_password && ' Add a password to also sign in with email.'}</p>}
+          <form className="panel form acct-card" onSubmit={changePw}>
+            <div className="acct-head"><h3 className="acct-title"><KeyRound size={18} /> {prefs.has_password ? 'Change password' : 'Set a password'}</h3></div>
+            {prefs.linked_providers.length > 0 && <p className="acct-desc">Signed in with {prefs.linked_providers.join(' and ')}.{!prefs.has_password && ' Add a password to also sign in with email.'}</p>}
             {prefs.has_password && <label className="field">Current password<input type="password" value={pw.current_password} onChange={e => setPw({ ...pw, current_password: e.target.value })} autoComplete="current-password" required /></label>}
             <label className="field">New password<small>At least 12 characters.</small><input type="password" value={pw.new_password} onChange={e => setPw({ ...pw, new_password: e.target.value })} autoComplete="new-password" required minLength={12} maxLength={128} /></label>
-            <div><button className="btn ghost">{prefs.has_password ? 'Change password' : 'Set password'}</button></div>
+            <div className="acct-actions"><button className="btn ghost">{prefs.has_password ? 'Change password' : 'Set password'}</button></div>
           </form>)}
-        <div className="stack">
-          <div className="panel form"><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Download size={17} /> Your data</h3>
-            <p className="muted small" style={{ margin: 0 }}>Download everything Galdus stores about you: profile, workspaces and usage records.</p>
-            <div><button type="button" className="btn ghost" onClick={exportData}>Download my data</button></div></div>
-          <div className="panel form"><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><KeyRound size={17} /> Sessions</h3>
-            <p className="muted small" style={{ margin: 0 }}>Lost a device or signed in on a shared computer? End every session at once.</p>
-            <div><button type="button" className="btn ghost" onClick={signOutEverywhere}>Sign out everywhere</button></div></div>
-          <form className="panel form" onSubmit={remove}><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Trash2 size={17} /> Delete account</h3>
-            <p className="muted small" style={{ margin: 0 }}>This cannot be undone. Workspaces you share with others stay with them.</p>
-            {prefs?.has_password !== false && <label className="field">Confirm with your password<input type="password" value={del} onChange={e => setDel(e.target.value)} autoComplete="current-password" required maxLength={128} /></label>}
-            {prefs?.has_password === false ? <p className="small muted" style={{ margin: 0 }}>Set a password first to confirm deletion.</p> : <div><button className="btn danger">Delete my account</button></div>}
-          </form>
-        </div>
+      </div>
+
+      <h2 className="acct-group">Your data</h2>
+      <div className="acct-grid three">
+        <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><Download size={18} /> Export</h3></div>
+          <p className="acct-desc">Download everything Galdus stores about you: profile, workspaces and usage records.</p>
+          <div className="acct-actions"><button type="button" className="btn ghost" onClick={exportData}>Download my data</button></div></div>
+        <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><LogOut size={18} /> Sessions</h3></div>
+          <p className="acct-desc">Lost a device or signed in on a shared computer? End every session at once.</p>
+          <div className="acct-actions"><button type="button" className="btn ghost" onClick={signOutEverywhere}>Sign out everywhere</button></div></div>
+        <form className="panel form acct-card danger-zone" onSubmit={remove}><div className="acct-head"><h3 className="acct-title"><Trash2 size={18} /> Delete account</h3></div>
+          <p className="acct-desc">This cannot be undone. Workspaces you share with others stay with them.</p>
+          {prefs?.has_password !== false && <label className="field">Confirm with your password<input type="password" value={del} onChange={e => setDel(e.target.value)} autoComplete="current-password" required maxLength={128} /></label>}
+          {prefs?.has_password === false ? <p className="acct-desc">Set a password first to confirm deletion.</p> : <div className="acct-actions"><button className="btn danger">Delete my account</button></div>}
+        </form>
       </div>
     </div>
   );

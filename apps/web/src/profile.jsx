@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, ArrowRight, BadgeCheck, Camera, Copy, Download, KeyRound, MailWarning, ShieldCheck, Smartphone, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, Camera, Copy, Download, KeyRound, MailWarning, ShieldCheck, Smartphone, Trash2, Upload, UserRound } from 'lucide-react';
 import { useWs } from './workspace';
 import { Done, HowTo, WizardFrame } from './wizardkit';
 
@@ -127,7 +127,7 @@ export function ProfileCard() {
     try { const r = await ws.call('/v1/auth/verify-email/resend', { method: 'POST' }); setSent(true); ws.toast(r.sent ? 'Confirmation email sent.' : 'Email is not enabled on this server.'); } catch (err) { ws.onError(err); }
   }
   return (
-    <div className="panel profile-card">
+    <div className="panel profile-card acct-card">
       <div className="profile-photo">
         <button type="button" className={`photo-btn ${drop ? 'drop' : ''}`} onClick={() => input.current?.click()} aria-label="Change profile photo"
           onDragOver={e => { e.preventDefault(); setDrop(true); }} onDragLeave={() => setDrop(false)}
@@ -145,14 +145,14 @@ export function ProfileCard() {
         </div>
       </div>
       <form className="form" onSubmit={saveName}>
-        <h2 style={{ margin: 0 }}>Profile</h2>
+        <div className="acct-head"><h3 className="acct-title"><UserRound size={18} /> Profile</h3></div>
         <label className="field">Full name<input value={name} onChange={e => setName(e.target.value)} required maxLength={160} autoComplete="name" /></label>
         <div className="field">Email
           <div className="email-row"><span>{u.email}</span>
             {u.email_verified ? <span className="gs-badge ok"><BadgeCheck size={12} /> Verified</span> : <span className="gs-badge warn"><MailWarning size={12} /> Not verified</span>}
             {!u.email_verified && u.email_verification_pending && <button type="button" className="linkish" disabled={sent} onClick={resend}>{sent ? 'Sent, check your inbox' : 'Send confirmation again'}</button>}
           </div></div>
-        <div><button className="btn" disabled={name.trim() === u.full_name || !name.trim()}>Save profile</button></div>
+        <div className="acct-actions"><button className="btn" disabled={name.trim() === u.full_name || !name.trim()}>Save profile</button></div>
       </form>
       <AnimatePresence>{file && <PhotoEditor key="photo" file={file} onCancel={() => setFile(null)} onSave={savePhoto} />}</AnimatePresence>
     </div>
@@ -180,14 +180,14 @@ export function SecurityCard() {
   }
   if (!st) return null;
   return (
-    <div className="panel form">
-      <div className="panel-head"><div><h3 style={{ display: 'flex', gap: 8, alignItems: 'center' }}><ShieldCheck size={17} /> Two-step verification</h3>
-        <p>{st.enabled ? 'On. Every sign-in asks for a code from your authenticator app.' : 'Off. Add a code from your phone to every sign-in, so a stolen password is not enough.'}</p></div>
+    <div className="panel form acct-card">
+      <div className="acct-head"><h3 className="acct-title"><ShieldCheck size={18} /> Two-step verification</h3>
         <span className={`gs-badge ${st.enabled ? 'ok' : ''}`}>{st.enabled ? 'On' : 'Off'}</span></div>
-      {!st.enabled && <div><button type="button" className="btn" onClick={() => setWizard(true)}><Smartphone size={15} /> Turn on</button></div>}
+      <p className="acct-desc">{st.enabled ? 'On. Every sign-in asks for a code from your authenticator app.' : 'Off. Add a code from your phone to every sign-in, so a stolen password is not enough.'}</p>
+      {!st.enabled && <div className="acct-actions"><button type="button" className="btn" onClick={() => setWizard(true)}><Smartphone size={15} /> Turn on</button></div>}
       {st.enabled && <>
-        <p className="small muted" style={{ margin: 0 }}>{st.recovery_codes_left} recovery code{st.recovery_codes_left === 1 ? '' : 's'} left.</p>
-        <div className="actions">
+        <p className="acct-desc">{st.recovery_codes_left} recovery code{st.recovery_codes_left === 1 ? '' : 's'} left.</p>
+        <div className="actions acct-actions">
           <button type="button" className="btn ghost sm" onClick={() => { setManage(manage === 'codes' ? '' : 'codes'); setCodes(null); }}><KeyRound size={14} /> New recovery codes</button>
           <button type="button" className="btn quiet sm" onClick={() => setManage(manage === 'off' ? '' : 'off')}>Turn off</button>
         </div>
