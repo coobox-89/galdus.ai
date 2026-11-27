@@ -78,11 +78,8 @@ export function HomePage({ go }) {
 
 // The chat is reproduced exactly as written in the brief. Do not edit the copy.
 const SCENE_CHAT = [
-  ['viking', 'Salute! Domani conquisto il villaggio vicino. Mi fai un piano?'],
-  ['galdus', 'Certo! Quanti uomini hai?'],
-  ['viking', '200 guerrieri, 40 navi, scudi e asce.'],
-  ['galdus', 'Ottimo. Ho trovato tutto online, con spedizione gratuita. Procedo? 🛒'],
-  ['viking', 'Si.'],
+  ['viking', 'Salute! Domani conquisto il villaggio vicino. Ho bisogno di armi.'],
+  ['galdus', 'Ottimo. Ho trovato tutto online, con spedizione gratuita. Procedo🛒'],
   ['galdus', 'Ordine effettuato! Consegna prevista tra 3-5 giorni lavorativi. 📦'],
   ['viking', 'Ma io attacco domani!'],
   ['galdus', "L'importante è partecipare."],
