@@ -20,6 +20,7 @@ from .db import get_db
 from .identity import current_membership
 from .models import KnowledgeChunk, KnowledgeCollection, KnowledgeDocument, Membership
 from .ratelimit import enforce
+from .governance import audit
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
@@ -154,6 +155,8 @@ async def create_collection(body: CollectionCreate, membership: Membership = Dep
                               connection_id=body.connection_id, embedding_model=(body.embedding_model or "").strip() or None,
                               created_by=membership.user_id)
     db.add(col)
+    await db.flush()
+    await audit(db, membership, "knowledge.collection_created", "collection", col.id, name=col.name)
     await db.commit()
     await db.refresh(col)
     return to_out(col, 0)
@@ -164,6 +167,7 @@ async def delete_collection(collection_id: uuid.UUID, membership: Membership = D
     require_manager(membership)
     col = await get_collection(db, membership, collection_id)
     await db.delete(col)
+    await audit(db, membership, "knowledge.collection_deleted", "collection", collection_id)
     await db.commit()
 
 
@@ -213,12 +217,27 @@ async def upload(collection_id: uuid.UUID, file: UploadFile = File(...), title: 
     return await ingest(db, membership, col, (title or file.filename or "Untitled").strip(), content, source_type)
 
 
+class UrlDocument(BaseModel):
+    url: str = Field(min_length=8, max_length=2000)
+
+
+@router.post("/collections/{collection_id}/documents/url", response_model=DocumentOut, status_code=201)
+async def add_url(collection_id: uuid.UUID, body: UrlDocument, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    """Import the readable text of a public web page."""
+    from .tools import fetch_public_text
+    enforce(f"ingest:{membership.user_id}", 30)
+    col = await get_collection(db, membership, collection_id)
+    title, content = await fetch_public_text(body.url.strip())
+    return await ingest(db, membership, col, title, content, "web")
+
+
 @router.delete("/documents/{document_id}", status_code=204)
 async def delete_document(document_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     result = await db.execute(delete(KnowledgeDocument).where(
         KnowledgeDocument.id == document_id, KnowledgeDocument.organization_id == membership.organization_id))
     if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="Document not found in this workspace")
+    await audit(db, membership, "knowledge.document_deleted", "document", document_id)
     await db.commit()
 
 

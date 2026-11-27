@@ -12,6 +12,12 @@ Models (BYOK): each workspace connects its own providers (OpenAI, Anthropic, Gem
 
 Knowledge, Agents and Apps: requires the `vector` extension (on Supabase: `create extension if not exists vector with schema extensions;` and `alter role galdus_app set search_path = "$user", public, extensions;`, run once as `postgres`). Collections use semantic search when they have an embedding model on a connection, keyword search otherwise. Agents combine instructions, a model and optional knowledge; Apps are built-in templates (chat with documents, summarize, rewrite, email, translate). Every execution is stored in `runs`.
 
+Governance: Team tab with members and roles (owner/admin/member), invitation links (no email provider yet: the link is shown once to the inviter), audit log, monthly workspace token limit and guardrails (untrusted content is fenced and likely prompt injections neutralised).
+
+Automation: agents run on a cron schedule (minimum every 15 minutes) and/or from an incoming webhook (`POST /api/v1/hooks/<token>` with `{"input": "..."}`, for n8n, Make, Zapier, ITSM tools). Results can be delivered to an https webhook (Slack/Teams incoming webhooks). Scheduling needs `AUTOMATION_TOKEN` on Render and the same value as GitHub secret `GALDUS_AUTOMATION_TOKEN`; `.github/workflows/automation-tick.yml` wakes the API every 15 minutes.
+
+Integrations: MCP servers (Streamable HTTP, optional Authorization header, per-tool allowlist) and built-in tools (calculator, date/time, web page fetch, knowledge search) for agents; knowledge import from public URLs.
+
 Admin console: set `ADMIN_EMAILS` on Render to the owner's email, then register with that email; the account sees the **Admin console** tab (users, organizations, usage, configuration, grant/revoke admin). Existing accounts can be promoted with `update users set is_platform_admin = true where email = '...'`.
 
 One-time setup: GitHub **Settings → Pages → Source: GitHub Actions**; Supabase password for `galdus_app`; Render **New → Blueprint** with `DATABASE_URL` and `OPENAI_API_KEY`. If Render does not assign `galdus-api.onrender.com`, set the repository variable `GALDUS_API_BASE_URL=https://<host>/api` and re-run the Pages workflow.

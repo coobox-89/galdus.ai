@@ -16,6 +16,11 @@ from .models import Membership, ProviderConnection
 from .providers import PROVIDERS, catalog, litellm_model, validate_base_url
 from .ratelimit import enforce
 
+
+async def _audit(db, membership, action, target_id, **kw):
+    from .governance import audit
+    await audit(db, membership, action, "model_connection", target_id, **kw)
+
 router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
 MANAGER_ROLES = {"owner", "admin"}
@@ -117,6 +122,8 @@ async def create_connection(body: ConnectionCreate, membership: Membership = Dep
         default_model=(body.default_model or "").strip() or None, created_by=membership.user_id,
     )
     db.add(conn)
+    await db.flush()
+    await _audit(db, membership, "model_connection.created", conn.id, provider=conn.provider, label=conn.label)
     await db.commit()
     await db.refresh(conn)
     return to_out(conn)
@@ -127,6 +134,7 @@ async def delete_connection(connection_id: uuid.UUID, membership: Membership = D
     require_manager(membership)
     conn = await get_connection(db, membership, connection_id)
     await db.delete(conn)
+    await _audit(db, membership, "model_connection.deleted", connection_id)
     await db.commit()
 
 

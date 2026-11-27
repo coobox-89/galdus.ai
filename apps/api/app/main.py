@@ -9,6 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .admin import router as admin_router
 from .agents import router as agents_router
 from .knowledge import router as knowledge_router
+from .automation import router as automation_router
+from .governance import router as governance_router
+from .tools import router as integrations_router
 from .chat import router as chat_router
 from .connections import router as models_router
 from .config import settings
@@ -62,6 +65,9 @@ app.include_router(admin_router)
 app.include_router(models_router)
 app.include_router(knowledge_router)
 app.include_router(agents_router)
+app.include_router(automation_router)
+app.include_router(governance_router)
+app.include_router(integrations_router)
 
 
 @app.get("/health")

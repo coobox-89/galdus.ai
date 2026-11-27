@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # Allow http/private-network base URLs for self-hosted models (self-host installs only).
     allow_private_model_endpoints: bool = False
 
+    # Shared secret for POST /api/v1/automation/tick (scheduler). Empty disables schedules.
+    automation_token: str = ""
+
     # Rate limits (requests per window per client IP / user). In-process only:
     # run a single API instance or put a shared limiter in front for scale-out.
     rate_limit_enabled: bool = True

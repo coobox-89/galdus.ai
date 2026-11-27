@@ -66,6 +66,58 @@ def _split(v: str) -> list[str]:
     return [x for x in (i.strip() for i in v.split(",")) if x]
 
 
+async def resolve_call(db: AsyncSession, membership: Membership, connection_id=None, model: str | None = None) -> tuple[str, dict]:
+    """Pick credentials and enforce limits for a model call. Returns (label, litellm kwargs)."""
+    enforce(f"chat:{membership.user_id}", settings.rate_limit_chat_per_minute)
+    await enforce_workspace_limit(db, membership)
+    if connection_id:
+        conn = await get_connection(db, membership, connection_id)
+        chosen = (model or conn.default_model or "").strip()
+        if not chosen:
+            raise HTTPException(status_code=400, detail="Choose a model for this connection")
+        kwargs = call_kwargs(conn, chosen)
+        conn.last_used_at = datetime.now(timezone.utc)
+        return kwargs["model"], kwargs
+    label = resolve_model(model)
+    if settings.daily_token_budget_per_user > 0:
+        if await tokens_used_today(db, membership.user_id) >= settings.daily_token_budget_per_user:
+            raise HTTPException(status_code=429, detail="Daily usage limit reached. Try again tomorrow.")
+    return label, {"model": label, **provider_kwargs(label)}
+
+
+async def enforce_workspace_limit(db: AsyncSession, membership: Membership) -> None:
+    from .models import Organization
+    org = await db.get(Organization, membership.organization_id)
+    if not org or not org.monthly_token_limit:
+        return
+    since = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    used = await db.scalar(select(func.coalesce(func.sum(UsageEvent.prompt_tokens + UsageEvent.completion_tokens), 0))
+                           .where(UsageEvent.organization_id == org.id, UsageEvent.created_at >= since))
+    if int(used or 0) >= org.monthly_token_limit:
+        raise HTTPException(status_code=429, detail="This workspace reached its monthly token limit. An owner can raise it in Team settings.")
+
+
+async def call_model(label: str, kwargs: dict, messages: list[dict], **extra):
+    try:
+        return await litellm.acompletion(messages=messages, timeout=settings.llm_timeout_seconds,
+                                         num_retries=settings.llm_max_retries, max_tokens=settings.llm_max_output_tokens,
+                                         **kwargs, **extra)
+    except HTTPException:
+        raise
+    except Exception as exc:  # provider errors must not leak details or keys
+        logger.warning("Model provider call failed: model=%s error=%s", label, type(exc).__name__)
+        raise HTTPException(status_code=502, detail=f"The model provider request failed ({type(exc).__name__}). Check the model name and key.") from exc
+
+
+def record_usage(db: AsyncSession, membership: Membership, label: str, result) -> tuple[int, int]:
+    usage = getattr(result, "usage", None)
+    p = int(getattr(usage, "prompt_tokens", 0) or 0)
+    c = int(getattr(usage, "completion_tokens", 0) or 0)
+    db.add(UsageEvent(user_id=membership.user_id, organization_id=membership.organization_id, model=label[:200],
+                      prompt_tokens=p, completion_tokens=c))
+    return p, c
+
+
 async def complete(
     db: AsyncSession,
     membership: Membership,
@@ -73,48 +125,12 @@ async def complete(
     connection_id=None,
     model: str | None = None,
 ) -> tuple[str, str, int, int]:
-    """Run one completion for a member. Returns (model_label, content, prompt_tokens, completion_tokens).
-
-    With connection_id the workspace's own provider key is used (BYOK); otherwise a
-    platform-provided model from ALLOWED_MODELS, subject to the daily budget.
-    """
-    enforce(f"chat:{membership.user_id}", settings.rate_limit_chat_per_minute)
-    if connection_id:
-        conn = await get_connection(db, membership, connection_id)
-        chosen = (model or conn.default_model or "").strip()
-        if not chosen:
-            raise HTTPException(status_code=400, detail="Choose a model for this connection")
-        kwargs = call_kwargs(conn, chosen)
-        label = kwargs["model"]
-        conn.last_used_at = datetime.now(timezone.utc)
-    else:
-        label = resolve_model(model)
-        kwargs = {"model": label, **provider_kwargs(label)}
-        if settings.daily_token_budget_per_user > 0:
-            if await tokens_used_today(db, membership.user_id) >= settings.daily_token_budget_per_user:
-                raise HTTPException(status_code=429, detail="Daily usage limit reached. Try again tomorrow.")
-
-    try:
-        result = await litellm.acompletion(
-            messages=messages,
-            timeout=settings.llm_timeout_seconds,
-            num_retries=settings.llm_max_retries,
-            max_tokens=settings.llm_max_output_tokens,
-            **kwargs,
-        )
-    except HTTPException:
-        raise
-    except Exception as exc:  # provider errors must not leak details or keys
-        logger.warning("Model provider call failed: model=%s error=%s", label, type(exc).__name__)
-        raise HTTPException(status_code=502, detail=f"The model provider request failed ({type(exc).__name__}). Check the model name and key.") from exc
-
-    usage = getattr(result, "usage", None)
-    prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
-    completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
-    db.add(UsageEvent(user_id=membership.user_id, organization_id=membership.organization_id, model=label[:200],
-                      prompt_tokens=prompt_tokens, completion_tokens=completion_tokens))
+    """Run one completion for a member. Returns (model_label, content, prompt_tokens, completion_tokens)."""
+    label, kwargs = await resolve_call(db, membership, connection_id, model)
+    result = await call_model(label, kwargs, messages)
+    p, c = record_usage(db, membership, label, result)
     await db.commit()
-    return label, result.choices[0].message.content or "", prompt_tokens, completion_tokens
+    return label, result.choices[0].message.content or "", p, c
 
 
 @router.post("/chat/completions", response_model=ChatResponse)
