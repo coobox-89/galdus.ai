@@ -196,7 +196,34 @@ async def tick(db: AsyncSession = Depends(get_db), authorization: str | None = H
     for a in due:
         run = await run_automation(db, a, "schedule")
         results.append({"automation_id": str(a.id), "status": run.status if run else "skipped"})
-    return {"ran": len(results), "results": results}
+    synced = await sync_external_documents(db)
+    return {"ran": len(results), "results": results, "documents_synced": synced}
+
+
+async def sync_external_documents(db: AsyncSession, limit: int = 10) -> int:
+    """Refresh documents imported from Google Drive / SharePoint at most once a day."""
+    from datetime import timedelta
+    from .connectors import resync_document
+    from .models import KnowledgeDocument
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    docs = (await db.execute(select(KnowledgeDocument).where(KnowledgeDocument.external_ref.is_not(None),
+                                                             KnowledgeDocument.external_connection_id.is_not(None),
+                                                             (KnowledgeDocument.synced_at.is_(None)) | (KnowledgeDocument.synced_at < cutoff))
+                             .limit(limit))).scalars().all()
+    updated = 0
+    for doc in docs:
+        owner = await db.scalar(select(Membership).where(Membership.organization_id == doc.organization_id, Membership.role == "owner"))
+        if not owner:
+            continue
+        try:
+            updated += int(await resync_document(db, owner, doc))
+        except HTTPException:
+            await db.rollback()
+            doc = await db.get(KnowledgeDocument, doc.id)
+            if doc:
+                doc.synced_at = datetime.now(timezone.utc)
+                await db.commit()
+    return updated
 
 
 class HookIn(BaseModel):

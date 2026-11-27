@@ -12,6 +12,9 @@ from .knowledge import router as knowledge_router
 from .automation import router as automation_router
 from .governance import router as governance_router
 from .tools import router as integrations_router
+from .accounts import router as accounts_router
+from .connectors import router as connectors_router
+from .conversations import router as conversations_router
 from .chat import router as chat_router
 from .connections import router as models_router
 from .config import settings
@@ -34,7 +37,8 @@ app = FastAPI(
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     length = request.headers.get("content-length")
-    limit = 6_000_000 if request.url.path.endswith("/documents/upload") else settings.max_request_bytes
+    path = request.url.path
+    limit = 6_000_000 if path.endswith(("/documents/upload", "/chat/attachments")) or "/conversations/" in path else settings.max_request_bytes
     if length and length.isdigit() and int(length) > limit:
         return JSONResponse(status_code=413, content={"detail": "Request body too large"})
     response = await call_next(request)
@@ -68,6 +72,9 @@ app.include_router(agents_router)
 app.include_router(automation_router)
 app.include_router(governance_router)
 app.include_router(integrations_router)
+app.include_router(accounts_router)
+app.include_router(connectors_router)
+app.include_router(conversations_router)
 
 
 @app.get("/health")

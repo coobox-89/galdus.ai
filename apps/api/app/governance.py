@@ -13,6 +13,7 @@ from .db import get_db
 from .identity import current_membership, current_user
 from .models import AuditEvent, Invitation, Membership, Organization, User
 from .ratelimit import enforce
+from .mailer import send as send_email
 
 router = APIRouter(prefix="/api/v1", tags=["governance"])
 
@@ -142,8 +143,15 @@ async def invite(body: InviteIn, membership: Membership = Depends(current_member
     await db.flush()
     await audit(db, membership, "invitation.created", "invitation", inv.id, email=inv.email, role=inv.role)
     await db.commit()
-    # No email provider yet: the inviter shares this one-time token (shown once).
-    return {"id": str(inv.id), "email": inv.email, "role": inv.role, "token": token, "expires_at": inv.expires_at.isoformat()}
+    org = await db.get(Organization, membership.organization_id)
+    from .config import settings
+    link = f"{settings.frontend_url.rstrip('/')}/#/account?invite={token}"
+    emailed = await send_email(inv.email, f"You are invited to {org.name} on Galdus.ai", f"Join {org.name}",
+                               f"You have been invited to the {org.name} workspace as {inv.role}. The invitation is valid for {INVITE_DAYS} days.",
+                               "Accept invitation", link)
+    # The token is also returned once, so the inviter can share the link when email is not configured.
+    return {"id": str(inv.id), "email": inv.email, "role": inv.role, "token": token, "emailed": emailed,
+            "expires_at": inv.expires_at.isoformat()}
 
 
 @router.delete("/org/invitations/{invitation_id}", status_code=204)

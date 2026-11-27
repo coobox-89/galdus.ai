@@ -49,6 +49,24 @@ class Settings(BaseSettings):
     # Allow http/private-network base URLs for self-hosted models (self-host installs only).
     allow_private_model_endpoints: bool = False
 
+    # Public URLs used to build OAuth redirect URIs and links in emails.
+    public_api_url: str = "http://localhost:8000"
+    frontend_url: str = "http://localhost:5173"
+    # OAuth apps (login and cloud-drive connectors). Empty values hide the feature.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    microsoft_client_id: str = ""
+    microsoft_client_secret: str = ""
+    microsoft_tenant: str = "common"
+    # Outgoing email (any SMTP provider: Resend, Brevo, SES, Mailgun...). Empty disables email.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+
     # Shared secret for POST /api/v1/automation/tick (scheduler). Empty disables schedules.
     automation_token: str = ""
 

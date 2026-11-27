@@ -38,6 +38,32 @@ services:
         sync: false
       - key: AUTOMATION_TOKEN
         sync: false   # same value as the GitHub secret GALDUS_AUTOMATION_TOKEN
+      - key: PUBLIC_API_URL
+        value: https://galdus-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://coobox-89.github.io/galdus.ai
+      # Sign in with Google/GitHub and Drive/SharePoint connectors: leave empty to hide.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      # Email for invitations and password reset (any SMTP provider).
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
       - key: ADMIN_EMAILS
         sync: false   # your email: that account becomes platform admin when it registers
       - key: DAILY_TOKEN_BUDGET_PER_USER
