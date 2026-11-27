@@ -53,7 +53,7 @@ flowchart LR
 | Database | PostgreSQL 16 + pgvector | Accessed only by the API through a dedicated role. Row-level security is on for every table, so the Supabase Data API cannot read anything. |
 | Model gateway | LiteLLM inside the API | Each workspace brings its own provider keys, encrypted with `ENCRYPTION_KEY` (Fernet). |
 | Scheduler | `.github/workflows/automation-tick.yml` | Wakes the API every 15 minutes and runs due automations, drive re-syncs and retention. |
-| Monitoring | `.github/workflows/uptime.yml` | Checks `/readyz` every 30 minutes and opens an `incident` issue when it fails. |
+| Monitoring | `.github/workflows/uptime.yml` | Checks `/readyz` every 10 minutes (keeping the free instance awake) and opens an `incident` issue when it fails. |
 
 ## Modules
 

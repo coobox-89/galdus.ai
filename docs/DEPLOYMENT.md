@@ -100,8 +100,8 @@ Generate a random value (`python3 -c "import secrets; print(secrets.token_urlsaf
 
 | Limit | Effect | What to do |
 |:--|:--|:--|
-| Render free instance sleeps after about 15 minutes idle | The first request after a pause takes 30 to 60 seconds | The scheduler and uptime workflows wake it every 15 to 30 minutes. For real traffic use a paid instance (always on). |
-| Render free: 750 instance hours a month, no pre-deploy step, one instance | Enough for one always-awake service; migrations run at container start | Keep one instance. On a paid plan set `RUN_MIGRATIONS_ON_START=false` and uncomment `preDeployCommand` in `render.yaml`. |
+| Render free instance sleeps after about 15 minutes idle | The first request after a pause (often a sign-in) takes 30 to 60 seconds; every deploy also restarts it | The uptime workflow pings it every 10 minutes and the scheduler every 15; GitHub can delay these, so add a free external pinger (UptimeRobot on `/health`, 5 minutes) for a steadier result. For real traffic use a paid instance (always on). |
+| Render free: 750 instance hours a month, 0.1 CPU, no pre-deploy step, one instance | Enough for one always-awake service; CPU-heavy steps (password hashing, PDF parsing) are slower; migrations run at container start | Keep one instance. On a paid plan set `RUN_MIGRATIONS_ON_START=false` and uncomment `preDeployCommand` in `render.yaml`. |
 | Render free: in-memory rate-limit counters reset on restart | Lockout windows restart after a deploy | Set `RATE_LIMIT_BACKEND=postgres` to keep counters in the database (one small write per limited request). |
 | Supabase free: 500 MB database, paused after 7 days without activity | Large knowledge bases fill the quota; a paused project makes `/readyz` fail | The scheduler keeps it active. Watch **Reports, Database size**; delete unused collections; upgrade before 400 MB. |
 | Supabase free: no downloadable daily backups or point-in-time recovery | You own the backups | Run `scripts/backup-db.sh` weekly ([OPERATIONS.md](OPERATIONS.md#backups)). |
