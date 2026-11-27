@@ -25,10 +25,20 @@ The initial implementation is a modular monolith: React + Vite web console, Fast
 3. Start services: `docker compose up --build -d`.
 4. Apply database migrations: `docker compose exec api alembic -c alembic.ini upgrade head`.
 5. Open the web console at http://localhost:5173 and API docs at http://localhost:8000/docs.
+6. Create an account from the web console; registration creates an organization/workspace for that account.
 
-API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two).
+The web container serves the built frontend through Nginx on container port 80 (mapped to host port 5173) and proxies `/api/` to the backend. API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two).
 
 Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
+
+## Desktop
+
+The Tauri 2 desktop shell is under `apps/web/src-tauri`. Build it from `apps/web` with Rust and the platform prerequisites installed:
+
+- `npm install`
+- `npm run tauri build`
+
+For a desktop build connected to a remote Galdus API, set `VITE_API_BASE_URL` to the API's public base URL at build time (for example, `https://api.example.com/api`). The default `/api` path is intended for the web frontend served behind the included Nginx proxy; it is not a remote API address for a standalone desktop installation. The desktop CI workflow can publish platform build artifacts after a successful GitHub Actions run; installers are not checked into this repository.
 
 ## Security warning
 

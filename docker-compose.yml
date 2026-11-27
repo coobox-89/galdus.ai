@@ -35,11 +35,10 @@ services:
   web:
     build: ./apps/web
     ports:
-      - "5173:5173"
-    environment:
-      VITE_API_BASE_URL: http://localhost:${API_PORT:-8000}
+      - "5173:80"
     depends_on:
       - api
+    restart: unless-stopped
 
 volumes:
   postgres_data:
