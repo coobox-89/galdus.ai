@@ -123,9 +123,11 @@ export function KnowledgePage() {
             {ws.canManage && <button type="button" className="btn danger sm" onClick={removeCol}>Delete collection</button>}</div>
           {docs.length === 0 ? <p className="muted" style={{ margin: 0 }}>Upload a file or import a page to get started.</p> : (
             <div className="table-wrap"><table><thead><tr><th>Title</th><th>Source</th><th>Size</th><th>Indexed</th><th>Added</th><th /></tr></thead>
-              <tbody>{docs.map(d => <tr key={d.id}><td>{d.title}</td><td>{d.source_type}</td><td className="num">{d.chars >= 1000 ? `${Math.round(d.chars / 1000)}k` : d.chars} characters, {plural(d.chunks, 'part')}</td>
+              <tbody>{docs.map(d => <tr key={d.id}><td>{d.title}</td><td>{({ google_drive: 'Google Drive', microsoft: 'SharePoint/OneDrive', web: 'Web page', pdf: 'PDF', text: 'Text' })[d.source_type] || d.source_type}</td><td className="num">{d.chars >= 1000 ? `${Math.round(d.chars / 1000)}k` : d.chars} characters, {plural(d.chunks, 'part')}</td>
                 <td>{d.embedded ? <span className="chip ok">semantic</span> : <span className="chip">keyword</span>}</td><td>{when(d.created_at)}</td>
-                <td><button type="button" className="btn quiet sm" onClick={() => removeDoc(d)}>Remove</button></td></tr>)}</tbody></table></div>)}
+                <td style={{ display: 'flex', gap: 4 }}>{['google_drive', 'microsoft'].includes(d.source_type) && <button type="button" className="btn quiet sm" onClick={() => wrap('sync', async () => {
+                  const r = await ws.call(`/v1/connectors/documents/${d.id}/resync`, { method: 'POST' }); after(); ws.toast(r.updated ? 'Document updated from the drive.' : 'Already up to date.'); })}>Sync</button>}
+                  <button type="button" className="btn quiet sm" onClick={() => removeDoc(d)}>Remove</button></td></tr>)}</tbody></table></div>)}
         </div>
       </>}
     </div>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ModelPicker } from './modelpicker';
 import { RunView } from './runview';
 import { useWs } from './workspace';
+import { Bot } from 'lucide-react';
 import { Empty, PageHead, Pixels, plural, Status, when } from './ui';
 
 const EMPTY = { name: '', description: '', instructions: '', collection_id: '', tools: [], mcp_server_ids: [] };
@@ -107,7 +108,7 @@ export function AgentsPage({ go }) {
       ) : <>
         <div className="tiles">{agents.map(a => (
           <button key={a.id} type="button" className={`tile ${a.id === selected ? 'active' : ''}`} onClick={() => { setSelected(a.id); setRun(null); }}>
-            <b>{a.name}</b><small>{a.description || a.instructions.slice(0, 90)}</small>
+            <span className="ico"><Bot size={18} /></span><b>{a.name}</b><small>{a.description || a.instructions.slice(0, 90)}</small>
             <span className="meta"><span className="chip">{a.model}</span>{a.collection_id && <span className="chip">Knowledge</span>}
               {(a.tools.length + a.mcp_server_ids.length) > 0 && <span className="chip">{plural(a.tools.length + a.mcp_server_ids.length, 'tool')}</span>}</span>
           </button>))}

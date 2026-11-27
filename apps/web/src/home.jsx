@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useWs } from './workspace';
-import { fmt, Status, when } from './ui';
+import { BookOpen, Bot, Coins, Cpu, MessageSquare } from 'lucide-react';
+import { CountUp, fmt, rise, stagger, Status, when } from './ui';
 
 export function HomePage({ go }) {
   const ws = useWs();
@@ -24,7 +25,7 @@ export function HomePage({ go }) {
   return (
     <div className="stack" style={{ gap: 28 }}>
       <div className="welcome">
-        <h1>Good to see you{first ? `, ${first}` : ''}.</h1>
+        <motion.h1 className="grad-text" initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}>Good to see you{first ? `, ${first}` : ''}.</motion.h1>
         <p className="muted" style={{ margin: '8px 0 0' }}>Here is where {s?.name || 'your workspace'} stands today.</p>
       </div>
 
@@ -42,17 +43,17 @@ export function HomePage({ go }) {
         </ol>
       </section>
 
-      <section className="stats">
-        <div className="stat"><small>Tokens this month</small><b>{fmt(s?.tokens_this_month)}</b>
-          {s?.monthly_token_limit ? <small>of {fmt(s.monthly_token_limit)} allowed</small> : <small>No monthly limit</small>}</div>
-        <div className="stat"><small>Model connections</small><b>{ws.sources.connections.length}</b></div>
-        <div className="stat"><small>Documents</small><b>{fmt(docs)}</b></div>
-        <div className="stat"><small>Agents</small><b>{data.agents.length}</b></div>
-      </section>
+      <motion.section className="stats" variants={stagger} initial="hidden" animate="show">
+        <motion.div variants={rise} className="stat"><Coins className="ico" size={20} /><small>Tokens this month</small><b><CountUp value={s?.tokens_this_month} /></b>
+          {s?.monthly_token_limit ? <small>of {fmt(s.monthly_token_limit)} allowed</small> : <small>No monthly limit</small>}</motion.div>
+        <motion.div variants={rise} className="stat"><Cpu className="ico" size={20} /><small>Model connections</small><b><CountUp value={ws.sources.connections.length} /></b></motion.div>
+        <motion.div variants={rise} className="stat"><BookOpen className="ico" size={20} /><small>Documents</small><b><CountUp value={docs} /></b></motion.div>
+        <motion.div variants={rise} className="stat"><Bot className="ico" size={20} /><small>Agents</small><b><CountUp value={data.agents.length} /></b></motion.div>
+      </motion.section>
 
       <section className="panel">
         <div className="panel-head"><div><h3>Recent activity</h3><p>Runs from agents, apps and automations.</p></div>
-          <button type="button" className="btn ghost sm" onClick={() => go('chat')}>New chat</button></div>
+          <button type="button" className="btn ghost sm" onClick={() => go('chat')}><MessageSquare size={14} /> New chat</button></div>
         {data.runs.length === 0 ? <p className="muted" style={{ margin: 0 }}>Nothing has run yet. Try an app or an agent.</p> : (
           <div className="table-wrap"><table><thead><tr><th>When</th><th>Source</th><th>Request</th><th>Status</th></tr></thead>
             <tbody>{data.runs.map(r => (

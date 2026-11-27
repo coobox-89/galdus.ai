@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { Mark, Wordmark } from './brand';
+import { Bot, BookOpen, Cpu, LayoutDashboard, LayoutGrid, LogOut, Menu, MessageSquare, Plug, Search, ShieldCheck, UserCog, Users, Workflow } from 'lucide-react';
+import { Aurora, Mark, Wordmark } from './brand';
 import { useWs } from './workspace';
 import { HomePage } from './home';
 import { ChatPage } from './chat';
@@ -21,6 +22,11 @@ export const NAV = [
   { group: 'Connect', items: [['models', 'Models'], ['integrations', 'Integrations']] },
   { group: 'Manage', items: [['team', 'Team'], ['account', 'Account']] },
 ];
+
+export const ICONS = {
+  home: LayoutDashboard, chat: MessageSquare, apps: LayoutGrid, agents: Bot, knowledge: BookOpen, automations: Workflow,
+  models: Cpu, integrations: Plug, team: Users, account: UserCog, admin: ShieldCheck,
+};
 
 const PAGES = {
   home: HomePage, chat: ChatPage, apps: AppsPage, agents: AgentsPage, knowledge: KnowledgePage,
@@ -67,8 +73,9 @@ export function Shell({ onLogout }) {
 
   return (
     <div className="shell">
+      <Aurora />
       <aside className={`sidebar ${drawer ? 'open' : ''}`} aria-label="Main navigation">
-        <div className="brand-row"><Mark size={30} /><Wordmark /></div>
+        <div className="brand-row" onClick={() => navigate('home')}><Mark size={30} /><Wordmark /></div>
         <label className="ws-switch">
           <span className="sr-only">Workspace</span>
           <select value={ws.organizationId} onChange={e => ws.setOrganizationId(e.target.value)} disabled={ws.organizations.length < 2}>
@@ -80,39 +87,43 @@ export function Shell({ onLogout }) {
             {nav.map(g => (
               <div key={g.group} className="nav-group">
                 <small>{g.group}</small>
-                {g.items.map(([id, label]) => (
-                  <button key={id} type="button" className={`nav-item ${route === id ? 'active' : ''}`}
-                    aria-current={route === id ? 'page' : undefined} onClick={() => navigate(id)}>
-                    <span className="slot">{route === id && <motion.span layoutId="nav-pixel" className="nav-pixel"
-                      transition={{ type: 'spring', stiffness: 520, damping: 34 }} />}</span>
-                    {label}
-                  </button>
-                ))}
+                {g.items.map(([id, label]) => {
+                  const Icon = ICONS[id];
+                  return (
+                    <button key={id} type="button" className={`nav-item ${route === id ? 'active' : ''}`}
+                      aria-current={route === id ? 'page' : undefined} onClick={() => navigate(id)}>
+                      {route === id && <motion.span layoutId="nav-pill" className="nav-pill" transition={{ type: 'spring', stiffness: 480, damping: 36 }} />}
+                      <Icon strokeWidth={2.2} aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             ))}
           </nav>
         </LayoutGroup>
         <div className="sidebar-foot">
-          <button type="button" className="kbd-hint" onClick={() => setPalette(true)}>Go to… <span><kbd>Ctrl</kbd> <kbd>K</kbd></span></button>
+          <button type="button" className="kbd-hint" onClick={() => setPalette(true)}><span style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Search size={14} /> Go to…</span> <span><kbd>Ctrl</kbd> <kbd>K</kbd></span></button>
           <div className="user-chip">
             <span className="avatar">{initials}</span>
             <div><b>{ws.user?.full_name}</b><small>{ws.user?.email}</small></div>
           </div>
-          <button type="button" className="btn ghost sm" onClick={onLogout}>Sign out</button>
+          <button type="button" className="btn ghost sm" onClick={onLogout}><LogOut size={15} /> Sign out</button>
         </div>
       </aside>
       <div className={`drawer-scrim ${drawer ? 'open' : ''}`} onClick={() => setDrawer(false)} />
 
       <div className="main">
         <header className="topbar">
-          <button type="button" className="btn ghost sm" onClick={() => setDrawer(true)} aria-label="Open menu">Menu</button>
+          <button type="button" className="btn ghost sm icon" onClick={() => setDrawer(true)} aria-label="Open menu"><Menu size={18} /></button>
           <div className="brand-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Mark size={24} /><Wordmark /></div>
-          <button type="button" className="btn quiet sm" onClick={() => setPalette(true)} aria-label="Search">Go to</button>
+          <button type="button" className="btn quiet sm icon" onClick={() => setPalette(true)} aria-label="Search"><Search size={18} /></button>
         </header>
         <AnimatePresence mode="wait" initial={false}>
           <motion.main key={`${route}-${ws.organizationId}`} className="page"
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: .18, ease: [0.2, 0.8, 0.2, 1] }}>
+            initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -6, filter: 'blur(4px)' }} transition={{ duration: .24, ease: [0.2, 0.8, 0.2, 1] }}
+            style={route === 'chat' ? { maxWidth: 1320, paddingTop: 20, paddingBottom: 20 } : undefined}>
             {ws.organizationId ? <Page go={navigate} /> : null}
           </motion.main>
         </AnimatePresence>
@@ -147,7 +158,7 @@ function Palette({ nav, onPick, onClose }) {
           }} />
         <ul>{list.map((a, i) => (
           <li key={a.label}><button type="button" className={i === sel ? 'sel' : ''} onMouseEnter={() => setSel(i)} onClick={() => onPick(a.id)}>
-            {a.label}<small>{a.hint}</small></button></li>
+            <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>{React.createElement(ICONS[a.id] || Search, { size: 16 })}{a.label}</span><small>{a.hint}</small></button></li>
         ))}</ul>
       </motion.div>
     </motion.div>

@@ -24,11 +24,27 @@ function loadToken() {
   return token;
 }
 
+// Handle #/oauth?token=… (sign-in with Google/GitHub) and #/oauth?error=… before anything renders.
+function consumeOAuthFragment() {
+  const [path, query] = window.location.hash.replace(/^#\/?/, '').split('?');
+  if (path !== 'oauth') return { error: '' };
+  const params = new URLSearchParams(query || '');
+  const token = params.get('token');
+  if (token) {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + Number(params.get('expires_in') || 1800) * 1000));
+  }
+  history.replaceState(null, '', window.location.pathname + '#/home');
+  return { error: params.get('error') || '' };
+}
+const OAUTH = consumeOAuthFragment();
+
 function App() {
   const toast = useToast();
   const [token, setToken] = useState(loadToken);
   const [user, setUser] = useState(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(OAUTH.error);
+  const resetToken = window.location.hash.startsWith('#/reset') ? new URLSearchParams(window.location.hash.split('?')[1] || '').get('token') : null;
 
   const clear = useCallback(note => {
     sessionStorage.removeItem(TOKEN_KEY);
@@ -55,7 +71,7 @@ function App() {
     setToken(data.access_token);
   }
 
-  if (!token) return <Landing onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} />;
+  if (!token) return <Landing onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} resetToken={resetToken} />;
   if (!user) return null;
   return (
     <WorkspaceProvider token={token} user={user} onExpired={expire}>

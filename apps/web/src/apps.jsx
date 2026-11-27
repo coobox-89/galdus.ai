@@ -2,7 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ModelPicker } from './modelpicker';
 import { RunView } from './runview';
 import { useWs } from './workspace';
-import { PageHead, Pixels } from './ui';
+import { motion } from 'motion/react';
+import { BookOpen, ClipboardList, FileSearch, Languages, Mail, PenLine, Scale, Ticket } from 'lucide-react';
+import { PageHead, Pixels, rise, stagger } from './ui';
+
+const APP_ICONS = { 'document-qa': BookOpen, summarize: FileSearch, rewrite: PenLine, email: Mail, translate: Languages,
+  'ticket-triage': Ticket, 'contract-review': Scale, 'meeting-actions': ClipboardList };
 
 export function AppsPage({ go }) {
   const ws = useWs();
@@ -31,13 +36,16 @@ export function AppsPage({ go }) {
   return (
     <div className="stack">
       <PageHead title="Apps">Ready-made tools for everyday work. Pick one, fill in the form, get a result in seconds.</PageHead>
-      <div className="tiles" role="list">{apps.map(a => (
-        <button key={a.id} type="button" role="listitem" className={`tile ${a.id === appId ? 'active' : ''}`} aria-pressed={a.id === appId}
+      <motion.div className="tiles" role="list" variants={stagger} initial="hidden" animate={apps.length ? 'show' : 'hidden'}>{apps.map(a => {
+        const Icon = APP_ICONS[a.id] || FileSearch;
+        return (
+        <motion.button variants={rise} key={a.id} type="button" role="listitem" className={`tile ${a.id === appId ? 'active' : ''}`} aria-pressed={a.id === appId}
           onClick={() => { setAppId(a.id); setInputs({}); setRun(null); }}>
+          <span className="ico"><Icon size={18} /></span>
           <b>{a.name}</b><small>{a.description}</small>
           {a.needs_collection && <span className="meta"><span className="chip">Uses knowledge</span></span>}
-        </button>))}
-      </div>
+        </motion.button>); })}
+      </motion.div>
       {app && (
         <form className="panel form" onSubmit={submit}>
           <h2>{app.name}</h2>

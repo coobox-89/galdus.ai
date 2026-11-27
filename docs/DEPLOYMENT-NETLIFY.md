@@ -24,6 +24,19 @@ One-time setup: GitHub **Settings → Pages → Source: GitHub Actions**; Supaba
 
 Scaling up later: set `plan: starter`, `RUN_MIGRATIONS_ON_START: "false"` and enable `preDeployCommand` in `render.yaml`; optionally move the frontend to Netlify (config already in `netlify.toml`).
 
+## Optional: sign-in with Google/GitHub, cloud drives, email
+
+All are off until the variables are set on Render. Redirect URIs use `PUBLIC_API_URL` (default `https://galdus-api.onrender.com`).
+
+| Feature | Where to create the app | Redirect URI | Render variables |
+|---|---|---|---|
+| Sign in with Google + Google Drive | Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web). Enable the Google Drive API; consent screen scopes `openid email profile drive.readonly` | `https://galdus-api.onrender.com/api/v1/auth/oauth/google/callback` and `https://galdus-api.onrender.com/api/v1/connectors/google/callback` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| Sign in with GitHub | GitHub → Settings → Developer settings → OAuth Apps → New | `https://galdus-api.onrender.com/api/v1/auth/oauth/github/callback` | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
+| SharePoint and OneDrive | Microsoft Entra admin center → App registrations → New (multitenant), Web platform; API permissions (delegated) `User.Read`, `Files.Read.All`, `Sites.Read.All`, `offline_access`; create a client secret | `https://galdus-api.onrender.com/api/v1/connectors/microsoft/callback` | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` (optional `MICROSOFT_TENANT`) |
+| Email (invitations, password reset) | Any SMTP provider (Resend, Brevo, Amazon SES, Mailgun) with a verified sender domain | — | `SMTP_HOST`, `SMTP_PORT` (587 or 465), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` |
+
+Accounts are linked by email only when the provider reports the email as verified. Imported drive documents re-sync daily through the automation scheduler.
+
 ## Full topology
 
 Topology:

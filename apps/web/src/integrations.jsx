@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useWs } from './workspace';
+import { CloudDrives } from './drives';
 import { PageHead, Pixels } from './ui';
 
 const ROADMAP = [
   ['Slack and Microsoft Teams', 'Deliver automation results today via incoming webhooks. Two-way bots are planned.', 'Available'],
   ['n8n, Make, Zapier', 'Trigger agents from any workflow with an automation webhook.', 'Available'],
   ['Web pages', 'Import public pages into knowledge, or let agents read them with the web tool.', 'Available'],
-  ['Google Drive, SharePoint, OneDrive', 'Sync documents into knowledge collections automatically.', 'Planned'],
-  ['Single sign-on', 'Sign in with Microsoft Entra ID, Google Workspace or any OIDC provider.', 'Planned'],
+  ['Google Drive, SharePoint, OneDrive', 'Import documents into knowledge, re-synced daily.', 'Available'],
+  ['Sign in with Google and GitHub', 'One-click sign-in once the platform owner adds the OAuth apps.', 'Available'],
+  ['Microsoft Entra ID single sign-on', 'Company sign-in with your Microsoft tenant.', 'Planned'],
   ['Databases', 'Let agents query PostgreSQL or SQL Server read-only, through MCP today.', 'Via MCP'],
 ];
 
@@ -42,6 +44,7 @@ export function IntegrationsPage() {
   return (
     <div className="stack">
       <PageHead title="Integrations">Connect your company tools to agents with the Model Context Protocol, and plug Galdus into the workflows you already use.</PageHead>
+      <CloudDrives />
       <div className="panel">
         <div className="panel-head"><div><h3>MCP servers</h3><p>Agents can only call tools you explicitly allow. Every call is recorded on the run.</p></div></div>
         <div className="stack">{servers.map(s => (

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, animate, motion } from 'motion/react';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // ---- Toasts -----------------------------------------------------------------
 const ToastCtx = createContext(() => {});
@@ -24,6 +25,7 @@ export function ToastProvider({ children }) {
               exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}>
               <span className="px" /><span>{t.message}</span>
               <button type="button" aria-label="Dismiss" onClick={() => setItems(l => l.filter(x => x.id !== t.id))}>×</button>
+              <motion.span className="bar" initial={{ scaleX: 1 }} animate={{ scaleX: 0 }} transition={{ duration: t.kind === 'error' ? 7 : 3.5, ease: 'linear' }} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -61,7 +63,7 @@ export function Status({ status }) {
 }
 
 export function Md({ children }) {
-  return <div className="md"><Markdown>{children || ''}</Markdown></div>;
+  return <div className="md"><Markdown remarkPlugins={[remarkGfm]}>{children || ''}</Markdown></div>;
 }
 
 export function PageHead({ title, children, actions }) {
@@ -77,3 +79,23 @@ export const when = iso => (iso ? new Date(iso).toLocaleString() : 'never');
 export const fmt = n => new Intl.NumberFormat().format(n ?? 0);
 
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+// Animated number for stats.
+export function CountUp({ value }) {
+  const [shown, setShown] = useState(0);
+  React.useEffect(() => {
+    const target = Number(value) || 0;
+    const controls = animate(0, target, { duration: 1.1, ease: [0.16, 1, 0.3, 1], onUpdate: v => setShown(Math.round(v)) });
+    return () => controls.stop();
+  }, [value]);
+  return <>{new Intl.NumberFormat().format(shown)}</>;
+}
+
+export const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+};
+export const rise = {
+  hidden: { opacity: 0, y: 14, filter: 'blur(4px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 260, damping: 26 } },
+};
