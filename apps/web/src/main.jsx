@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { api } from './api';
 import { AcceptableUse, Privacy, Terms } from './legal';
 import { AdminConsole } from './admin';
+import { ModelPicker, useModelSources } from './modelpicker';
+import { ModelsTab } from './models';
 import { currentRoute, href } from './paths';
 import './style.css';
 
@@ -82,18 +84,67 @@ function AuthForm({ onAuthenticated, message, setMessage }) {
   );
 }
 
-function Workspace({ token, user, onExpired, onLogout }) {
-  const [organizations, setOrganizations] = useState([]);
-  const [organizationId, setOrganizationId] = useState('');
-  const [models, setModels] = useState([]);
-  const [model, setModel] = useState('');
+function ChatTab({ token, organizationId, sources, onError }) {
+  const [selection, setSelection] = useState({ connectionId: '', model: '' });
   const [messages, setMessages] = useState([]);
   const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [usage, setUsage] = useState({ prompt_tokens: 0, completion_tokens: 0 });
-  const [view, setView] = useState('chat');
+  const [usage, setUsage] = useState(0);
   const endRef = useRef(null);
+  const pick = useCallback(v => setSelection(v), []);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [messages, busy]);
+
+  async function send(event) {
+    event.preventDefault();
+    const content = prompt.trim();
+    if (!content || busy) return;
+    const next = [...messages, { role: 'user', content }];
+    setMessages(next); setPrompt(''); setBusy(true);
+    try {
+      const data = await api('/v1/chat/completions', { token, organizationId, method: 'POST', body: {
+        connection_id: selection.connectionId || undefined, model: selection.model || undefined, messages: next } });
+      setMessages([...next, { role: 'assistant', content: data.content, model: data.model }]);
+      setUsage(u => u + (data.usage?.prompt_tokens || 0) + (data.usage?.completion_tokens || 0));
+    } catch (err) {
+      setMessages(messages); setPrompt(content); onError(err);
+    } finally { setBusy(false); }
+  }
+
+  if (!sources.loaded) return <p>Loading models…</p>;
+  return (
+    <>
+      <ModelPicker sources={sources} value={selection} onChange={pick} />
+      <div className="conversation" aria-live="polite">
+        {messages.length === 0 && !busy && <p className="empty">Start a conversation with the selected model.</p>}
+        {messages.map((m, i) => (
+          <div key={i} className={`bubble ${m.role}`}><b>{m.role === 'user' ? 'You' : (m.model || 'Assistant')}</b><pre>{m.content}</pre></div>
+        ))}
+        {busy && <div className="bubble assistant"><b>{selection.model || 'Assistant'}</b><pre>Thinking…</pre></div>}
+        <div ref={endRef} />
+      </div>
+      <form onSubmit={send}>
+        <label className="sr-only" htmlFor="prompt">Message</label>
+        <textarea id="prompt" value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask anything…" maxLength={100000} required
+          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(e); }} />
+        <div className="row">
+          <button disabled={busy || !selection.model}>{busy ? 'Sending…' : 'Send'}</button>
+          <button type="button" className="secondary" disabled={busy || !messages.length} onClick={() => setMessages([])}>New conversation</button>
+          {usage > 0 && <small className="usage">{usage} tokens this session</small>}
+        </div>
+      </form>
+    </>
+  );
+}
+
+const TABS = [['chat', 'Chat'], ['models', 'Models']];
+
+function Workspace({ token, user, onExpired, onLogout }) {
+  const [organizations, setOrganizations] = useState([]);
+  const [organizationId, setOrganizationId] = useState('');
+  const [error, setError] = useState('');
+  const [view, setView] = useState('chat');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handle = useCallback((err) => {
     if (err.status === 401) onExpired();
@@ -108,43 +159,9 @@ function Workspace({ token, user, onExpired, onLogout }) {
     return () => { active = false; };
   }, [token, handle]);
 
-  useEffect(() => {
-    if (!organizationId) return undefined;
-    let active = true;
-    api('/v1/models', { token, organizationId })
-      .then(data => { if (active) { setModels(data.models); setModel(data.default); } })
-      .catch(handle);
-    return () => { active = false; };
-  }, [token, organizationId, handle]);
-
-  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [messages, busy]);
-
-  async function send(event) {
-    event.preventDefault();
-    const content = prompt.trim();
-    if (!content || busy) return;
-    const next = [...messages, { role: 'user', content }];
-    setMessages(next);
-    setPrompt('');
-    setError('');
-    setBusy(true);
-    try {
-      const data = await api('/v1/chat/completions', {
-        token, organizationId, method: 'POST', body: { model: model || undefined, messages: next },
-      });
-      setMessages([...next, { role: 'assistant', content: data.content }]);
-      setUsage(u => ({
-        prompt_tokens: u.prompt_tokens + (data.usage?.prompt_tokens || 0),
-        completion_tokens: u.completion_tokens + (data.usage?.completion_tokens || 0),
-      }));
-    } catch (err) {
-      setMessages(messages);
-      setPrompt(content);
-      handle(err);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const sources = useModelSources(token, organizationId, handle, refreshKey);
+  const role = organizations.find(o => o.id === organizationId)?.role;
+  const tabs = user?.is_platform_admin ? [...TABS, ['admin', 'Admin console']] : TABS;
 
   return (
     <>
@@ -153,46 +170,23 @@ function Workspace({ token, user, onExpired, onLogout }) {
           <h2>Your workspace</h2>
           <p>{user ? `Signed in as ${user.full_name} (${user.email}).` : 'Verifying your session…'}</p>
         </div>
-        <button type="button" className="secondary" onClick={onLogout}>Sign out</button>
-      </div>
-      {user?.is_platform_admin && (
-        <div className="tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={view === 'chat'} className={view === 'chat' ? '' : 'secondary'} onClick={() => setView('chat')}>Chat</button>
-          <button type="button" role="tab" aria-selected={view === 'admin'} className={view === 'admin' ? '' : 'secondary'} onClick={() => setView('admin')}>Admin console</button>
-        </div>
-      )}
-      {view === 'admin' && user?.is_platform_admin ? <AdminConsole token={token} currentUserId={user.id} onError={handle} /> : <>
-      <div className="controls">
-        <label>Workspace
-          <select value={organizationId} onChange={e => { setOrganizationId(e.target.value); setMessages([]); }} disabled={!organizations.length}>
+        <div className="row">
+          <select aria-label="Workspace" value={organizationId} onChange={e => setOrganizationId(e.target.value)} disabled={organizations.length < 2}>
             {organizations.map(o => <option key={o.id} value={o.id}>{o.name} · {o.role}</option>)}
           </select>
-        </label>
-        <label>Model
-          <select value={model} onChange={e => setModel(e.target.value)} disabled={!models.length}>
-            {models.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </label>
-      </div>
-      <div className="conversation" aria-live="polite">
-        {messages.length === 0 && !busy && <p className="empty">Start a conversation. Messages are sent to the selected model through your Galdus.ai server.</p>}
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}`}><b>{m.role === 'user' ? 'You' : 'Galdus.ai'}</b><pre>{m.content}</pre></div>
-        ))}
-        {busy && <div className="bubble assistant"><b>Galdus.ai</b><pre>Thinking…</pre></div>}
-        <div ref={endRef} />
-      </div>
-      <form onSubmit={send}>
-        <label className="sr-only" htmlFor="prompt">Message</label>
-        <textarea id="prompt" value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask Galdus.ai something…" maxLength={100000} required
-          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(e); }} />
-        <div className="row">
-          <button disabled={busy || !user || !organizationId}>{busy ? 'Sending…' : 'Send'}</button>
-          <button type="button" className="secondary" disabled={busy || !messages.length} onClick={() => setMessages([])}>New conversation</button>
-          {usage.prompt_tokens + usage.completion_tokens > 0 && <small className="usage">{usage.prompt_tokens + usage.completion_tokens} tokens this session</small>}
+          <button type="button" className="secondary" onClick={onLogout}>Sign out</button>
         </div>
-      </form>
-      </>}
+      </div>
+      <div className="tabs" role="tablist">
+        {tabs.map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={view === id} className={view === id ? '' : 'secondary'}
+            onClick={() => { setView(id); setError(''); }}>{label}</button>
+        ))}
+      </div>
+      {view === 'chat' && <ChatTab key={organizationId} token={token} organizationId={organizationId} sources={sources} onError={handle} />}
+      {view === 'models' && <ModelsTab token={token} organizationId={organizationId} role={role} sources={sources}
+        onChanged={() => setRefreshKey(k => k + 1)} onError={handle} />}
+      {view === 'admin' && user?.is_platform_admin && <AdminConsole token={token} currentUserId={user.id} onError={handle} />}
       {error && <p role="alert" className="error">{error}</p>}
       <AccountPanel token={token} onDeleted={onLogout} onError={handle} />
     </>
@@ -293,7 +287,7 @@ function App() {
         {message && !token && <p role="status" className="status">{message}</p>}
       </section>
       <footer>
-        Early access · Chat is the only live module today ·{' '}
+        Early access ·{' '}
         <a href={href('/privacy')}>Privacy</a> · <a href={href('/terms')}>Terms</a> · <a href={href('/acceptable-use')}>Acceptable use</a> ·{' '}
         <a href="https://github.com/coobox-89/galdus.ai">Source (AGPL-3.0-only)</a>
       </footer>

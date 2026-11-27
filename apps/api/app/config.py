@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     # Daily per-user token budget (prompt + completion). 0 disables the budget.
     daily_token_budget_per_user: int = 200_000
 
+    # BYOK: encrypts provider keys stored per organization.
+    encryption_key: str = ""
+    # Allow http/private-network base URLs for self-hosted models (self-host installs only).
+    allow_private_model_endpoints: bool = False
+
     # Rate limits (requests per window per client IP / user). In-process only:
     # run a single API instance or put a shared limiter in front for scale-out.
     rate_limit_enabled: bool = True
@@ -89,6 +94,8 @@ class Settings(BaseSettings):
             problems.append("DATABASE_URL must be set in production")
         if self.litellm_model not in self.allowed_model_list:
             problems.append("LITELLM_MODEL must be included in ALLOWED_MODELS")
+        if self.encryption_key and len(self.encryption_key) < 32:
+            problems.append("ENCRYPTION_KEY must be at least 32 characters")
         if problems:
             raise ValueError("Invalid production configuration: " + "; ".join(problems))
         return self

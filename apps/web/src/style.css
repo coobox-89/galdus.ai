@@ -21,3 +21,8 @@ select{background:#0d1118;border:1px solid #3b4657;border-radius:9px;color:white
 .table-wrap{overflow-x:auto;border:1px solid #303846;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #222a36;white-space:nowrap}th{color:#7e91a8;font-weight:600;background:#0d1118}
 @media(max-width:700px){.tiles,.config{grid-template-columns:repeat(2,1fr)}}
+.hint{color:#9ba8ba;font-size:14px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{border:1px solid #303846;border-radius:10px;padding:14px;background:#0d1118;display:grid;gap:6px}.card small{color:#9ba8ba}
+.ok{color:#7be0a0!important}.grid-form{grid-template-columns:repeat(2,1fr)}.grid-form .row{grid-column:1/-1}
+@media(max-width:700px){.grid-form{grid-template-columns:1fr}}
+.workspace-head select{min-width:200px}

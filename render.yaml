@@ -24,6 +24,8 @@ services:
         value: "*"
       - key: JWT_SECRET
         generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true   # encrypts workspace provider keys (BYOK); back it up, never rotate casually
       - key: DATABASE_URL
         sync: false   # Supabase session-pooler URL, entered in the Render dashboard
       - key: CORS_ORIGINS

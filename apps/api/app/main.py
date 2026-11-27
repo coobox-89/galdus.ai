@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .admin import router as admin_router
 from .chat import router as chat_router
+from .connections import router as models_router
 from .config import settings
 from .db import get_db
 from .identity import router as identity_router
@@ -47,7 +48,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization", "X-Organization-Id"],
     max_age=600,
 )
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(identity_router)
 app.include_router(chat_router)
 app.include_router(admin_router)
+app.include_router(models_router)
 
 
 @app.get("/health")

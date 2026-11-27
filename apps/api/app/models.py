@@ -48,3 +48,19 @@ class UsageEvent(Base):
     prompt_tokens: Mapped[int] = mapped_column(Integer, default=0)
     completion_tokens: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
+
+
+class ProviderConnection(Base):
+    """An organization's own credentials for a model provider (BYOK)."""
+    __tablename__ = "provider_connections"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(40))
+    label: Mapped[str] = mapped_column(String(80))
+    api_key_encrypted: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    api_key_hint: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    api_base: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    default_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
