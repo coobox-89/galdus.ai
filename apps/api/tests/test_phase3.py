@@ -185,7 +185,7 @@ def test_scheduled_and_webhook_automations(client, monkeypatch):
     asyncio.run(make_due())
     r = client.post("/api/v1/automation/tick", headers={"Authorization": f"Bearer {settings.automation_token}"}).json()
     assert r["ran"] >= 1 and any(x["automation_id"] == auto["id"] and x["status"] == "succeeded" for x in r["results"])
-    assert delivered == ["Daily report ready"]
+    assert "Daily report ready" in delivered  # other due automations in a shared test DB may also run
 
     hook = client.post(auto["webhook_path"], json={"input": "ticket #42 opened"})
     assert hook.status_code == 200 and hook.json()["output"] == "Daily report ready"
