@@ -6,7 +6,7 @@
 > **Default branch:** `main`  
 > **Product tagline:** “The Open AI Operating System.”  
 > **License:** AGPL-3.0-only  
-> **Status:** early MVP foundation; **not production-ready and not publicly deployed**.
+> **Status:** 0.6.0 public early-access preview (GitHub Pages + Render free + Supabase free). Not yet hardened for a broad launch; see `docs/security/overview.md`.
 
 ## 1. Instructions for the receiving agent
 
@@ -72,7 +72,7 @@ The owner previously indicated the desired domain is `galdus.ai`, but ownership/
 - `netlify.toml`: Netlify build base `apps/web`, command `npm run build`, publish `dist`, SPA fallback.
 - `.github/workflows/ci.yml`: Python syntax, pytest, npm install and Vite production build.
 - `.github/workflows/desktop-build.yml`: multi-platform Tauri build workflow.
-- `docs/DEPLOYMENT-NETLIFY.md`: initial deployment guide (review/update it for Supabase before following it).
+- `docs/DEPLOYMENT.md`: initial deployment guide (review/update it for Supabase before following it).
 - `docs/product/roadmap.md`, `docs/security/overview.md`, `docs/architecture/0001-modular-monolith.md`.
 - `LICENSE`: AGPL-3.0-only.
 

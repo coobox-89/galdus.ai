@@ -1,0 +1,14 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: Steps to reproduce and what you expected instead. }
+    validations: { required: true }
+  - type: input
+    id: where
+    attributes: { label: Where, description: "Public preview, self-hosted (version), desktop app" }
+  - type: textarea
+    id: extra
+    attributes: { label: Screenshots or logs, description: Remove keys, tokens and personal data first. }

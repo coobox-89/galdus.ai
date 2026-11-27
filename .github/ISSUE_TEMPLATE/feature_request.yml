@@ -1,0 +1,11 @@
+name: Feature request
+description: Suggest a module, connector, app or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes: { label: The need, description: Who needs it and what they are trying to get done. }
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes: { label: Proposed solution }

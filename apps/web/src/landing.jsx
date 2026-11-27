@@ -1,21 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Bot, BookOpen, Cpu, LogIn, Mail, ShieldCheck, Code2, Workflow } from 'lucide-react';
+import { BookOpen, Box, Bot, Code2, LogIn, Mail, ShieldCheck, Workflow } from 'lucide-react';
 import { api } from './api';
 import { API_BASE_URL } from './config';
-import { Aurora, Mark, Swoosh, Wordmark } from './brand';
-import { href } from './paths';
+import { Mark, Wordmark } from './brand';
+import { Backdrop } from './hero';
+import { BASE, href } from './paths';
 
-const CAPABILITIES = [
-  [Cpu, 'Any model', 'Bring your own key: OpenAI, Anthropic, Qwen, DeepSeek, Mistral, local Ollama.'],
+const FEATURES = [
+  [Box, 'Any model', 'Bring your own key: OpenAI, Anthropic, Google, DeepSeek and more.'],
   [BookOpen, 'Your knowledge', 'Documents, Google Drive and SharePoint, with cited answers.'],
-  [Bot, 'Agents with tools', 'Assistants that search, calculate, browse and call MCP tools.'],
-  [Workflow, 'Automations', 'Schedules and webhooks, results delivered to Slack or Teams.'],
-  [ShieldCheck, 'Team governance', 'Roles, audit log, usage limits and guardrails.'],
+  [Bot, 'Agents with tools', 'Search, calculate, browse and call MCP tools.'],
+  [Workflow, 'Automations', 'Schedules and webhooks, delivered to Slack or Teams.'],
+  [ShieldCheck, 'Team governance', 'Roles, audit logs, usage limits and guardrails.'],
   [Code2, 'Open source', 'AGPL-3.0 and self-hostable. Your data stays where you put it.'],
 ];
-const HEADLINE = ['The', 'open', 'AI', 'operating', 'system.'];
 const LABEL = { google: 'Google', github: 'GitHub' };
+const REPO = 'https://github.com/coobox-89/galdus.ai';
+
+// Official provider marks are not bundled: drop google.svg / github.svg from the
+// brand kits into apps/web/public/brand/ and they appear on the buttons.
+function ProviderMark({ id }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return <LogIn size={17} />;
+  return <img src={`${BASE}/brand/${id}.svg`} alt="" width="20" height="20" onError={() => setOk(false)} />;
+}
 
 export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
   const reduce = useReducedMotion();
@@ -24,10 +33,12 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
   const [busy, setBusy] = useState(false);
   const [providers, setProviders] = useState({ login: [], email: false });
   const [note, setNote] = useState('');
+  const emailRef = useRef(null);
   useEffect(() => { api('/v1/auth/providers').then(setProviders).catch(() => {}); }, []);
   const set = k => e => setForm({ ...form, [k]: e.target.value });
-  const at = (d, extra = {}) => (reduce ? {} : { initial: { opacity: 0, y: 16, filter: 'blur(6px)' }, animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-    transition: { duration: .7, delay: d, ease: [0.16, 1, 0.3, 1], ...extra } });
+  const at = (d, from = { y: 18 }) => (reduce ? {} : { initial: { opacity: 0, filter: 'blur(8px)', ...from }, animate: { opacity: 1, x: 0, y: 0, filter: 'blur(0px)' },
+    transition: { duration: .8, delay: d, ease: [0.16, 1, 0.3, 1] } });
+  const focusSignIn = () => { setMode('login'); setTimeout(() => emailRef.current?.focus(), 50); };
 
   async function submit(e) {
     e.preventDefault();
@@ -41,9 +52,8 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
         window.location.hash = ''; setMode('login'); setNote('Password updated. Sign in with your new password.');
       } else {
         const registering = mode === 'register';
-        const data = await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
-          method: 'POST', body: registering ? form : { email: form.email, password: form.password } });
-        onAuthenticated(data);
+        onAuthenticated(await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
+          method: 'POST', body: registering ? form : { email: form.email, password: form.password } }));
       }
     } catch (err) { setMessage(err.message); } finally { setBusy(false); }
   }
@@ -56,41 +66,43 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
   }[mode];
 
   return (
-    <div className="landing">
-      <Aurora />
-      <Swoosh flip style={{ right: -80, bottom: -120, width: 'min(40vw, 520px)', opacity: .9 }} />
-      <section className="landing-hero">
-        <div className="brand-row"><Mark size={46} animate /><motion.span {...at(1.2)}><Wordmark /></motion.span></div>
-        <div className="hero-body">
-          <h1 className="grad-text" aria-label={HEADLINE.join(' ')}>
-            {HEADLINE.map((w, i) => (
-              <motion.span key={w} className="w" aria-hidden="true" {...at(1.25 + i * .09)}>{w}{i < HEADLINE.length - 1 ? ' ' : ''}</motion.span>
-            ))}
+    <div className="login-hero">
+      <Backdrop />
+      <motion.header className="lh-top" {...at(.9, { y: -14 })}>
+        <a className="lh-brand" href={href('/')} aria-label="Galdus.ai home"><Mark size={40} /><Wordmark /></a>
+        <nav className="lh-nav" aria-label="Site">
+          <a href="#features" onClick={e => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
+          <a href={`${REPO}/tree/main/docs`} target="_blank" rel="noreferrer">Docs</a>
+          <a href={REPO} target="_blank" rel="noreferrer">Source</a>
+          <button type="button" className="lh-signin" onClick={focusSignIn}>Sign in</button>
+        </nav>
+      </motion.header>
+
+      <main className="lh-main">
+        <section className="lh-copy">
+          <h1 aria-label="The AI operating system.">
+            {[['The', ' '], ['AI', ' ', 'lime'], ['operating', ' '], ['system', '', ''], ['.', '', 'lime']].map(([w, sp, c], i) => (
+              <motion.span key={i} aria-hidden="true" className={`w ${c || ''} ${w === 'operating' ? 'br' : ''}`} {...at(1.1 + i * .1, { y: 40 })}>{w}{sp}</motion.span>))}
           </h1>
-          <motion.p className="lead" {...at(1.8)}>One workspace for every model, your company knowledge, agents and automations. Model-agnostic, self-hostable and built for teams.</motion.p>
-          <motion.ul className="capabilities" initial="hidden" animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: .07, delayChildren: reduce ? 0 : 1.95 } } }}>
-            {CAPABILITIES.map(([Icon, t, d]) => (
-              <motion.li key={t} variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}>
-                <span className="px"><Icon size={16} strokeWidth={2.2} /></span><div><b>{t}</b><span>{d}</span></div>
+          <motion.p className="lh-sub" {...at(1.7)}>Forge the past. <span className="lime">Harness</span> the artificial.</motion.p>
+          <motion.span className="lh-bar" initial={reduce ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 1.9, duration: .6, ease: [0.16, 1, 0.3, 1] }} />
+          <motion.ul id="features" className="lh-features" initial="hidden" animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: .08, delayChildren: reduce ? 0 : 2 } } }}>
+            {FEATURES.map(([Icon, t, d]) => (
+              <motion.li key={t} variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } } }}>
+                <Icon size={30} strokeWidth={1.6} className="ic" /><div><b>{t}</b><span>{d}</span></div>
               </motion.li>))}
           </motion.ul>
-        </div>
-        <div className="landing-foot">
-          <a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a><a href={href('/acceptable-use')}>Acceptable use</a>
-          <a href="https://github.com/coobox-89/galdus.ai">Source code</a><span>Early access</span>
-        </div>
-      </section>
-      <section className="landing-auth">
-        <motion.div className="auth-card" {...(reduce ? {} : { initial: { opacity: 0, x: 30, scale: .97 }, animate: { opacity: 1, x: 0, scale: 1 },
-          transition: { duration: .8, delay: 1.05, ease: [0.16, 1, 0.3, 1] } })}>
+        </section>
+
+        <motion.section className="lh-card" aria-label="Sign in" {...at(1.3, { x: 40 })}>
           <motion.div key={mode} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .25 }}>
             <h2>{copy[0]}</h2>
-            <p className="muted" style={{ margin: '6px 0 20px' }}>{copy[1]}</p>
+            <p className="lh-muted">{copy[1]}</p>
             {(mode === 'login' || mode === 'register') && providers.login.length > 0 && <>
-              <div className="stack" style={{ gap: 10 }}>
+              <div className="lh-oauth">
                 {providers.login.map(p => (
-                  <a key={p} className="btn oauth block" href={`${API_BASE_URL}/v1/auth/oauth/${p}/start`}><LogIn size={16} /> Continue with {LABEL[p]}</a>))}
+                  <a key={p} className="lh-oauth-btn" href={`${API_BASE_URL}/v1/auth/oauth/${p}/start`}><ProviderMark id={p} /> Continue with {LABEL[p]}</a>))}
               </div>
               <div className="divider">or with email</div>
             </>}
@@ -99,25 +111,31 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
                 <label className="field">Full name<input value={form.full_name} onChange={set('full_name')} autoComplete="name" required maxLength={160} /></label>
                 <label className="field">Workspace name<input value={form.organization_name} onChange={set('organization_name')} required minLength={2} maxLength={160} placeholder="Your company or team" /></label>
               </>}
-              {mode !== 'reset' && <label className="field">Email<input type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>}
+              {mode !== 'reset' && <label className="field">Email<input ref={emailRef} type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>}
               {mode !== 'forgot' && (
                 <label className="field">
-                  <span style={{ display: 'flex', justifyContent: 'space-between' }}>{mode === 'reset' ? 'New password' : 'Password'}
-                    {mode === 'login' && <button type="button" className="linkish" style={{ fontSize: 12 }} onClick={() => { setMode('forgot'); setMessage(''); }}>Forgot password?</button>}</span>
+                  <span className="lh-row">{mode === 'reset' ? 'New password' : 'Password'}
+                    {mode === 'login' && <button type="button" className="linkish" onClick={() => { setMode('forgot'); setMessage(''); }}>Forgot password?</button>}</span>
                   <input type="password" value={form.password} onChange={set('password')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     required minLength={mode === 'login' ? 1 : 12} maxLength={128} />
                 </label>)}
               {message && <p role="alert" className="small" style={{ color: 'var(--danger)', margin: 0 }}>{message}</p>}
               {note && <p role="status" className="small" style={{ color: 'var(--lime)', margin: 0 }}><Mail size={13} style={{ verticalAlign: -2 }} /> {note}</p>}
-              <button className="btn block" disabled={busy}>{busy ? 'One moment…' : copy[2]}</button>
+              <button className="btn block lh-submit" disabled={busy}>{busy ? 'One moment…' : copy[2]}</button>
             </form>
-            <p className="auth-switch">
+            <p className="lh-switch">
               {mode === 'login' && <>New to Galdus.ai? <button type="button" className="linkish" onClick={() => { setMode('register'); setMessage(''); }}>Create a workspace</button></>}
               {mode !== 'login' && <>Back to <button type="button" className="linkish" onClick={() => { setMode('login'); setMessage(''); window.location.hash = ''; }}>sign in</button></>}
             </p>
           </motion.div>
-        </motion.div>
-      </section>
+        </motion.section>
+      </main>
+
+      <motion.footer className="lh-foot" {...at(2.4, { y: 10 })}>
+        <nav aria-label="Legal"><a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a><a href={href('/acceptable-use')}>Acceptable use</a>
+          <a href={REPO}>Source code</a><span>Early access</span></nav>
+        <p className="lh-sign"><b>Galdus.ai</b><span className="lh-rule" />Powered by you. Supercharged by AI.</p>
+      </motion.footer>
     </div>
   );
 }

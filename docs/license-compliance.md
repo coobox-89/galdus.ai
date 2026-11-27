@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/header-license.jpg" alt="License compliance" width="100%"></p>
+
 # License compliance checklist
 
 Project license: GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). `LICENSE` contains the complete license text.
