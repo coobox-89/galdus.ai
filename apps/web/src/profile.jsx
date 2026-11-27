@@ -6,10 +6,33 @@ import { Done, HowTo, WizardFrame } from './wizardkit';
 
 export const initialsOf = name => (name || '?').split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase();
 
-export function Avatar({ user, size = 32, className = '' }) {
-  return user?.avatar
-    ? <img className={`avatar img ${className}`} src={user.avatar} alt="" width={size} height={size} style={{ width: size, height: size }} />
-    : <span className={`avatar ${className}`} style={{ width: size, height: size, fontSize: Math.max(11, size * .38) }}>{initialsOf(user?.full_name)}</span>;
+// Anonymous Viking silhouette on lime: the default picture when no photo is set.
+export function VikingAvatar({ size = 32 }) {
+  const id = React.useId().replace(/:/g, '');
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="avatar-svg">
+      <defs><linearGradient id={`vk${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#E4FF6B" /><stop offset=".55" stopColor="#B6FF00" /><stop offset="1" stopColor="#3FD47A" /></linearGradient></defs>
+      <rect width="64" height="64" fill={`url(#vk${id})`} />
+      <g fill="#0B1F3B" stroke="#B6FF00" strokeWidth="1.1" strokeLinejoin="round">
+        <path d="M3 64 C5 53 13 47 23 45.5 L41 45.5 C51 47 59 53 61 64 Z" />
+        <path d="M17 18 C13 16.5 10.5 12 11 7 C13.5 10.5 16.5 12.5 20.5 13 Z" />
+        <path d="M47 18 C51 16.5 53.5 12 53 7 C50.5 10.5 47.5 12.5 43.5 13 Z" />
+        <path d="M19 27 C19 17 25 11.5 32 11.5 C39 11.5 45 17 45 27 Z" />
+        <path d="M20.5 26.5 h23 C43.8 31 43.4 34 42.5 36.5 C46 40 45.5 47 41 52 L36 50.5 L32 58 L28 50.5 L23 52 C18.5 47 18 40 21.5 36.5 C20.6 34 20.2 31 20.5 26.5 Z" />
+        <rect x="17" y="25" width="30" height="3.4" rx="1.4" />
+        <rect x="30.4" y="25" width="3.2" height="11" rx="1.2" />
+      </g>
+    </svg>
+  );
+}
+
+export function Avatar({ user, size = 32, className = '', ring = false }) {
+  const style = { width: size, height: size, borderRadius: Math.round(size * .3) };
+  return (
+    <span className={`avatar-frame ${ring ? 'ring' : ''} ${className}`} style={style} title={user?.full_name || undefined}>
+      {user?.avatar ? <img src={user.avatar} alt="" width={size} height={size} /> : <VikingAvatar size={size} />}
+    </span>
+  );
 }
 
 // ---- Photo editor: drag to frame, zoom, saved as a 256 px WebP -----------------
@@ -68,7 +91,7 @@ function PhotoEditor({ file, onCancel, onSave }) {
           <canvas ref={canvas} style={{ width: VIEW, height: VIEW }} />
           <span className="photo-ring" aria-hidden="true" />
         </div>
-        <label className="field" style={{ width: VIEW }}>Zoom
+        <label className="field zoom-field" style={{ width: VIEW }}>Zoom
           <input type="range" min="1" max="3" step="0.01" value={zoom} onChange={e => { const z = Number(e.target.value); setZoom(z); setPos(p => clamp(p, z)); }} /></label>
       </div>
     </WizardFrame>
@@ -81,7 +104,14 @@ export function ProfileCard() {
   const [name, setName] = useState(u.full_name);
   const [file, setFile] = useState(null);
   const [sent, setSent] = useState(false);
+  const [drop, setDrop] = useState(false);
   const input = useRef(null);
+  function pick(f) {
+    if (!f) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { ws.toast('Use a PNG, JPEG or WebP image.', 'warn'); return; }
+    if (f.size > 15e6) { ws.toast('Choose an image under 15 MB.', 'warn'); return; }
+    setFile(f);
+  }
   const patch = p => ws.setUser?.(x => ({ ...x, ...p }));
   async function saveName(e) {
     e.preventDefault();
@@ -99,11 +129,16 @@ export function ProfileCard() {
   return (
     <div className="panel profile-card">
       <div className="profile-photo">
-        <button type="button" className="photo-btn" onClick={() => input.current?.click()} aria-label="Change profile photo">
-          <Avatar user={u} size={96} /><span className="photo-cam"><Camera size={16} /></span>
+        <button type="button" className={`photo-btn ${drop ? 'drop' : ''}`} onClick={() => input.current?.click()} aria-label="Change profile photo"
+          onDragOver={e => { e.preventDefault(); setDrop(true); }} onDragLeave={() => setDrop(false)}
+          onDrop={e => { e.preventDefault(); setDrop(false); pick(e.dataTransfer.files?.[0]); }}>
+          <Avatar user={u} size={112} ring />
+          <span className="photo-over"><Camera size={22} /><small>{drop ? 'Drop to use' : u.avatar ? 'Change photo' : 'Add a photo'}</small></span>
+          <span className="photo-cam"><Camera size={16} /></span>
         </button>
+        <small className="muted photo-hint">PNG, JPEG or WebP. Drag a photo here.</small>
         <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
-          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; if (f.size > 15e6) { ws.toast('Choose an image under 15 MB.', 'warn'); return; } setFile(f); }} />
+          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; pick(f); }} />
         <div className="actions">
           <button type="button" className="btn ghost sm" onClick={() => input.current?.click()}><Upload size={14} /> {u.avatar ? 'Change' : 'Upload'}</button>
           {u.avatar && <button type="button" className="btn quiet sm" onClick={removePhoto}><Trash2 size={14} /> Remove</button>}

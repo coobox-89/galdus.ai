@@ -161,6 +161,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
           <a href={href('/acceptable-use')}>Acceptable use</a><a href={REPO}>Source code</a>
         </nav>
         <p className="lh-meta"><span className="lh-pill"><i />Early access</span><span>© {new Date().getFullYear()} Galdus.ai, AGPL-3.0</span></p>
+        <p className="lh-tm">Third-party names and logos belong to their owners and are used only to indicate compatibility. Galdus.ai is independent and not affiliated with any AI provider. <a href={href('/terms')}>Trademarks</a></p>
       </motion.footer>
     </div>
   );

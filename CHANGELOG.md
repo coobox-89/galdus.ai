@@ -2,6 +2,12 @@
 
 # Changelog
 
+## 0.9.1 (2026-11-27)
+
+- Default profile picture: an anonymous Viking silhouette in Blue Night on the lime gradient, used everywhere a person appears (sidebar, profile, team, chat).
+- Profile photo: squircle frame with a lime gradient ring, hover and drag-and-drop to change, editor framed like the final avatar.
+- Provider logos: each provider tile shows its official logo when the file is added to `apps/web/public/brand/providers/` (recoloured to the platform palette); a monogram otherwise.
+
 ## 0.9.0 (2026-11-27)
 
 - Two-step verification (opt-in, off by default): authenticator-app codes (TOTP, RFC 6238) with replay protection and ten single-use recovery codes. Guided setup with QR code; required on every sign-in, including Google and GitHub, once on.

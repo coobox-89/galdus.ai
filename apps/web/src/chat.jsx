@@ -6,6 +6,7 @@ import { useWs } from './workspace';
 import { Md, Pixels } from './ui';
 import { Select } from './select';
 import { ModelPicker } from './modelpicker';
+import { Avatar } from './profile';
 
 const STARTERS = {
   assistant: ['Summarise a text I paste', 'Plan my week with priorities', 'Explain a concept simply'],
@@ -196,7 +197,7 @@ export function ChatPage({ go }) {
             {messages.map(m => (
               <motion.div key={m.id} className={`msg ${m.role}`} layout="position"
                 initial={{ opacity: 0, y: 12, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 30 }}>
-                <span className="who">{m.role === 'user' ? 'You' : (m.model || settings.model)}{m.tokens ? <span className="muted" style={{ fontWeight: 500 }}> · {m.tokens} tokens</span> : null}</span>
+                <span className="who">{m.role === 'user' ? <><Avatar user={ws.user} size={18} /> You</> : (m.model || settings.model)}{m.tokens ? <span className="muted" style={{ fontWeight: 500 }}> · {m.tokens} tokens</span> : null}</span>
                 {m.attachments?.length > 0 && <div className="attach-chips" style={{ padding: 0, justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                   {m.attachments.map(a => <span key={a.name} className="attach">{a.kind === 'image' ? <ImageIcon size={12} /> : <FileText size={12} />}{a.name}</span>)}</div>}
                 {m.role === 'user' ? <div className="body">{m.content}</div> : (

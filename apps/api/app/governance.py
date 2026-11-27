@@ -65,7 +65,7 @@ async def members(membership: Membership = Depends(current_membership), db: Asyn
                              .where(Membership.organization_id == membership.organization_id)
                              .order_by(Membership.created_at))).all()
     return [{"user_id": str(u.id), "email": u.email, "full_name": u.full_name, "role": m.role,
-             "joined_at": m.created_at.isoformat()} for m, u in rows]
+             "joined_at": m.created_at.isoformat(), "avatar": u.avatar} for m, u in rows]
 
 
 async def _owner_count(db, org_id) -> int:
