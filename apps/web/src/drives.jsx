@@ -41,7 +41,8 @@ export function CloudDrives() {
                 <span key={c.id} className="meta" style={{ alignItems: 'center' }}><span className="chip ok">{c.account_email || 'connected'}</span>
                   {ws.canManage && <button type="button" className="btn ghost sm" onClick={() => setBrowsing(c)}>Browse files</button>}
                   {ws.canManage && <button type="button" className="btn quiet sm" onClick={() => disconnect(c)}>Disconnect</button>}</span>))}
-              {!a.configured ? <small>Not enabled on this server yet. The platform owner adds the {a.id === 'google_drive' ? 'Google' : 'Microsoft'} OAuth app once.</small>
+              {!a.configured ? <><small>Not enabled on this server yet. The platform owner adds the {a.id === 'google_drive' ? 'Google' : 'Microsoft'} OAuth app once.</small>
+                {ws.user?.is_platform_admin && <div><button type="button" className="btn ghost sm" onClick={() => { window.location.hash = '/admin?setup'; }}>Set it up</button></div>}</>
                 : ws.canManage && <div><button type="button" className="btn sm" onClick={() => connect(a.id)}>{linked.length ? 'Add account' : 'Connect'}</button></div>}
             </div>);
         })}

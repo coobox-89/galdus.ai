@@ -26,6 +26,29 @@ def _since(days: int) -> datetime:
 TOKENS = func.coalesce(func.sum(UsageEvent.prompt_tokens + UsageEvent.completion_tokens), 0)
 
 
+@router.get("/setup")
+async def setup():
+    """What the operator has configured. Names and redirect addresses only, never secret values."""
+    from .mailer import email_enabled
+    from .oauth import configured, redirect_uri
+    api = settings.public_api_url.rstrip("/")
+    return {
+        "public_api_url": api, "frontend_url": settings.frontend_url.rstrip("/"),
+        "items": [
+            {"id": "encryption", "enabled": len(settings.encryption_key) >= 32, "env": ["ENCRYPTION_KEY"]},
+            {"id": "admins", "enabled": bool(settings.admin_email_list), "env": ["ADMIN_EMAILS"]},
+            {"id": "google", "enabled": configured("google"), "env": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+             "redirect_uris": [redirect_uri("google", "login"), redirect_uri("google", "connect")]},
+            {"id": "github", "enabled": configured("github"), "env": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+             "redirect_uris": [redirect_uri("github", "login")]},
+            {"id": "microsoft", "enabled": configured("microsoft"), "env": ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_TENANT"],
+             "redirect_uris": [redirect_uri("microsoft", "connect")]},
+            {"id": "email", "enabled": email_enabled(), "env": ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"]},
+            {"id": "scheduler", "enabled": bool(settings.automation_token), "env": ["AUTOMATION_TOKEN"], "github_secret": "GALDUS_AUTOMATION_TOKEN"},
+        ],
+    }
+
+
 @router.get("/overview")
 async def overview(db: AsyncSession = Depends(get_db)):
     day = _since(1)
