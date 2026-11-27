@@ -4,10 +4,10 @@ Revisione per la produzione del 27 novembre 2026, branch `release/production-rea
 
 ## 1. Verdetto
 
-**Non ancora pronto** per l'apertura pubblica, ma solo per passi di configurazione che richiedono i tuoi account: il codice è pronto.
+**Quasi pronto**: il codice è pronto e i passi di configurazione 1-6 e 13 sono completati (27 novembre 2026). Resta un solo passo bloccante, il 7: collegare almeno un modello, senza il quale chat, agenti, app e automazioni non rispondono. Fatto quello, il verdetto è "Pronto per la produzione" per l'anteprima a costo zero.
 
-- Codice, test e documentazione: pronti. 141 test API, 18 test end-to-end, `pip-audit` e `npm audit` senza vulnerabilità, nessun segreto nella cronologia (gitleaks), nessuna violazione di accessibilità (axe, WCAG 2 AA) e console del browser pulita su tutte le pagine a 360, 768 e 1440 px.
-- Bloccanti prima di invitare persone: ruotare la password del database e la password admin temporanea, impostare `LEGAL_EMAIL` (le pagine legali non hanno ancora un contatto), verificare `/readyz` dopo il deploy accettare gli accordi sul trattamento dei dati (DPA) con i fornitori citati nella privacy policy e collegare almeno un modello (senza, la chat non risponde). Sono i passi 1-7 qui sotto; dopo questi il verdetto diventa "Pronto per la produzione" per l'anteprima a costo zero.
+- Codice, test e documentazione: pronti. 147 test API, 18 test end-to-end, `pip-audit` e `npm audit` senza vulnerabilità, nessun segreto nella cronologia (gitleaks), nessuna violazione di accessibilità (axe, WCAG 2 AA) e console del browser pulita su tutte le pagine a 360, 768 e 1440 px.
+- Completati: password del database (`galdus_app` e `postgres`) ruotate e verificate sul database, `ENCRYPTION_KEY` salvata, deploy e `/readyz` controllati, password admin cambiata con verifica in due passaggi attiva, `LEGAL_EMAIL` impostata, DPA di Supabase e Render scaricati e archiviati, sito Netlify eliminato.
 - SMTP e OAuth non bloccano: senza di essi la registrazione funziona, ma non ci sono email (verifica, reset password, inviti via mail) né accesso con Google, GitHub o Microsoft.
 
 ## 2. Cosa ho fatto
@@ -51,18 +51,14 @@ Dettagli, esiti e rischi residui in [security/review-2026-11-27.md](security/rev
 
 ## 3. Cosa devi fare tu entro la prossima settimana
 
+Aggiornato: restano i passi 7-12, 14 e 15 (i numeri originali sono mantenuti perché la tabella qui sotto li cita). Il 7 è l'ultimo bloccante.
+
 In ordine di priorità. Non incollare mai i valori in chat: vanno solo nei pannelli dei servizi.
 
-1. **Ruota la password del database.** Supabase, progetto `galdus-ai`, **SQL Editor**: `alter role galdus_app with password '<nuova password lunga e casuale>';`. Poi Render, servizio `galdus-api`, **Environment**, modifica `DATABASE_URL` con la nuova password, **Save changes**. Verifica che `https://galdus-api.onrender.com/readyz` risponda `ready`. Se usi anche la password `postgres` del progetto: Supabase, **Database, Settings, Reset database password**.
-2. **Salva `ENCRYPTION_KEY`.** Render, `galdus-api`, **Environment**, mostra `ENCRYPTION_KEY` e copiala nel tuo password manager. Senza di essa backup e chiavi dei fornitori non sono leggibili.
-3. **Controlla il deploy** (la pull request è già unita). Render, **Events**: verifica che l'ultimo deploy sia riuscito; apri `/readyz` e controlla `"migrations":"ok"` e `"version":"1.0.0-rc.1"`. Il deploy fallisce in sicurezza se manca una variabile obbligatoria: in quel caso il messaggio nei log di Render indica quale.
-4. **Cambia la password admin temporanea.** Accedi alla console, **Account, Change password** (le altre sessioni vengono chiuse), poi **Account, Two-step verification, Turn on** e conserva i codici di recupero.
-5. **Imposta `LEGAL_EMAIL`.** GitHub, repository, **Settings, Secrets and variables, Actions, Variables, New repository variable**: `LEGAL_EMAIL` (e se vuoi `LEGAL_ADDRESS`). Poi **Actions, Deploy web to GitHub Pages, Run workflow**. Controlla `https://coobox-89.github.io/galdus.ai/privacy`.
-6. **Accetta i DPA dei fornitori** (la privacy policy dichiara clausole contrattuali standard per i trasferimenti). Supabase: dashboard, **Organization settings, Legal documents**, firma il DPA. Render: **Workspace settings**, sezione legale/DPA (oppure dal sito Render, pagina DPA). Fai lo stesso con il provider SMTP che sceglierai al passo 8. Conserva le copie firmate. Facoltativo ma consigliato: far rileggere le pagine legali a un consulente.
 7. **Collega almeno un modello**, altrimenti chat, agenti, app e automazioni non rispondono. Due modi:
    - **Consigliato (BYOK):** nella console, **Models**, scegli un fornitore (per esempio OpenAI, Anthropic, Gemini, Mistral, Groq o OpenRouter), incolla la tua chiave API e premi **Test and connect**. Vale per il tuo workspace; ogni workspace collega le proprie chiavi.
    - **Modello della piattaforma per tutti:** Render, **Environment**, imposta `OPENAI_API_KEY` (resta `ALLOWED_MODELS=openai/gpt-4o-mini`). Da questa versione il modello compare nella chat solo se la chiave c'è davvero; i costi sono tuoi e vale il limite `DAILY_TOKEN_BUDGET_PER_USER`.
-8. **Configura SMTP su Render.** Scegli un provider (Brevo, Resend, Mailgun), verifica il dominio mittente, poi in Render **Environment**: `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`. Dopo una prova di reset password, aggiungi `REQUIRE_EMAIL_VERIFICATION=true`.
+8. **Configura SMTP su Render.** Scegli un provider (Brevo, Resend, Mailgun), verifica il dominio mittente, poi in Render **Environment**: `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`. Dopo una prova di reset password, aggiungi `REQUIRE_EMAIL_VERIFICATION=true`. Scarica anche il DPA del provider email (pagina "DPA" sul suo sito) e archivialo con quelli di Supabase e Render.
 9. **Configura OAuth su Render.** Segui [DEPLOYMENT.md, A4](DEPLOYMENT.md#a4-sign-in-with-google-github-microsoft-and-cloud-drives) oppure la console, **Platform admin, Setup** (mostra gli URI da copiare):
    - Google Cloud Console: client OAuth Web, URI `https://galdus-api.onrender.com/api/v1/auth/oauth/google/callback` e `.../api/v1/connectors/google/callback`; variabili `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
    - GitHub, **Settings, Developer settings, OAuth Apps**: URI `.../api/v1/auth/oauth/github/callback`; `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`.
@@ -70,9 +66,8 @@ In ordine di priorità. Non incollare mai i valori in chat: vanno solo nei panne
 10. **Attiva lo scheduler** (se non già fatto): genera un valore casuale, impostalo come `AUTOMATION_TOKEN` su Render e come secret `GALDUS_AUTOMATION_TOKEN` in GitHub, **Settings, Secrets and variables, Actions, Secrets**.
 11. **Completa GitHub.** **Settings, General, Social preview, Edit, Upload** con `docs/assets/social-preview.png`. Nella pagina del repository, ingranaggio accanto ad **About**: descrizione, sito `https://coobox-89.github.io/galdus.ai/`, topic (ai, llm, self-hosted, fastapi, react). **Settings, Code security**: attiva **Private vulnerability reporting** e **Dependabot alerts**. In alto, **Watch, All activity** per ricevere gli avvisi `incident`.
 12. **Primo backup.** Dal tuo computer: `DATABASE_URL=... BACKUP_PASSPHRASE=... ./scripts/backup-db.sh ~/galdus-backups` ([OPERATIONS.md](OPERATIONS.md#backups)); salva la passphrase nel password manager.
-13. **Netlify.** Il sito `galdus-ai` su Netlify non è più usato e la sua configurazione è stata rimossa: eliminalo o scollegalo dal repository (Netlify, **Site configuration, Delete site**), altrimenti i suoi build falliranno.
 14. **Materiali grafici.** Fornisci il simbolo ufficiale di Together AI (SVG dal suo brand kit, da mettere in `apps/web/public/brand/providers/together_ai.svg`) e l'immagine del vichingo ad alta risoluzione (almeno 2500 px di larghezza, sorgente senza compressione) per sostituire le versioni attuali.
-15. **Tagga la release candidate** dopo i passi 1-7: `git tag v1.0.0-rc.1 && git push origin v1.0.0-rc.1`. Dopo una settimana senza problemi, porta la versione a `1.0.0` e tagga `v1.0.0`.
+15. **Pubblica la release candidate**, dopo il merge di questa modifica: GitHub, **Actions**, workflow **Release**, **Run workflow** sul branch `main`. Crea il tag `v1.0.0-rc.1` e la pagina Release (pre-release) con le note del CHANGELOG; non fa deploy né riavvii. Dopo una settimana senza problemi: PR che porta la versione a `1.0.0`, merge, poi di nuovo **Run workflow** per `v1.0.0`.
 
 Facoltativo: `RATE_LIMIT_BACKEND=postgres` su Render per non azzerare i blocchi a ogni riavvio.
 
@@ -88,7 +83,7 @@ Facoltativo: `RATE_LIMIT_BACKEND=postgres` su Render per non azzerare i blocchi 
 | Automazioni pianificate e risincronizzazione drive | Solo webhook e "Run now" | `AUTOMATION_TOKEN` | Render e GitHub Secrets | 10 |
 | Invio risultati a Slack o Teams | Nessun invio | URL webhook in entrata di Slack o Teams | Console, wizard delle automazioni | facoltativo |
 | Server MCP per gli agenti | Solo strumenti integrati | URL del server MCP ed eventuale token | Console, **Integrations** | facoltativo |
-| Contatto nelle pagine legali | Pagine senza contatto | `LEGAL_EMAIL` | GitHub Variables | 5 |
+| Contatto nelle pagine legali | Pagine senza contatto | `LEGAL_EMAIL` | GitHub Variables | fatto |
 | Avvisi di disservizio | Nessun avviso | Watch sul repository | GitHub | 11 |
 
 ## 4. Rischi residui accettati
@@ -106,4 +101,4 @@ Descritti con le mitigazioni nella [review](security/review-2026-11-27.md#residu
 | Prompt injection da documenti e strumenti | Contenuti delimitati e neutralizzati, strumenti MCP in allowlist |
 | Supabase free senza backup scaricabili | Backup cifrati settimanali con script provato, prova di ripristino trimestrale |
 
-Quando i passi 1-7 sono fatti, per l'anteprima a costo zero non resta nulla di bloccante: i passi 8-15 completano funzionalità e presentazione.
+Quando il passo 7 è fatto, per l'anteprima a costo zero non resta nulla di bloccante: i passi 8-12, 14 e 15 completano funzionalità e presentazione.

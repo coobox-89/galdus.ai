@@ -16,14 +16,7 @@ How to deploy, roll back, rotate secrets, back up and restore, monitor and handl
    curl -s https://galdus-api.onrender.com/readyz    # "migrations":"ok"
    ```
 
-5. Tag the release (this publishes the GitHub release with the CHANGELOG section):
-
-   ```bash
-   git checkout main && git pull
-   git tag v1.0.0-rc.1 && git push origin v1.0.0-rc.1
-   ```
-
-   The tag must match `apps/api/app/version.py`; tags with a hyphen are published as pre-releases.
+5. Publish the release: **Actions, Release, Run workflow** on `main`. It tags the commit with the version in `apps/api/app/version.py` (for example `v1.0.0-rc.1`) and publishes the GitHub release with that version's CHANGELOG section. Pushing a matching tag from a terminal does the same. Versions with a hyphen are published as pre-releases; publishing the same version twice is refused.
 
 Docker Compose: `git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
 
