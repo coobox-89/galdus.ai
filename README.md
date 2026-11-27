@@ -27,7 +27,7 @@ The initial implementation is a modular monolith: React + Vite web console, Fast
 5. Open the web console at http://localhost:5173 and API docs at http://localhost:8000/docs.
 6. Create an account from the web console; registration creates an organization/workspace for that account.
 
-The web container serves the built frontend through Nginx on container port 80 (mapped to host port 5173) and proxies `/api/` to the backend. API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two).
+The web container serves the built frontend through Nginx on container port 80 (mapped to host port 5173) and proxies `/api/` to the backend. API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two). The chat endpoint `POST /api/v1/chat/completions` also requires a valid Bearer token.
 
 Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
 

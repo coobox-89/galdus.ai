@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from litellm import acompletion
 from .config import settings
-from .identity import router as identity_router
+from .identity import current_user, router as identity_router
+from .models import User
 from .schemas import ChatRequest, ChatResponse
 
 app = FastAPI(title="Galdus.ai API", version="0.2.0")
@@ -14,7 +15,7 @@ async def health():
     return {"status": "ok", "service": "galdus-api"}
 
 @app.post("/api/v1/chat/completions", response_model=ChatResponse)
-async def chat(body: ChatRequest):
+async def chat(body: ChatRequest, user: User = Depends(current_user)):
     if not settings.openai_api_key and not (body.model or "").startswith("ollama/"):
         raise HTTPException(status_code=503, detail="Configure a server-side model provider key first.")
     try:
