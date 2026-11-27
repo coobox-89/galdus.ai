@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useWs } from './workspace';
-import { BookOpen, Bot, Coins, Cpu, MessageSquare, Plug } from 'lucide-react';
+import { BookOpen, Bot, Coins, Cpu, MessageSquare, Plug, SendHorizontal } from 'lucide-react';
 import { Mark } from './brand';
+import vikingPhone from './assets/hero/viking-phone.webp';
 import { CountUp, fmt, rise, stagger, Status, when } from './ui';
 
 export function HomePage({ go }) {
@@ -90,59 +91,27 @@ const SCENE_CHAT = [
 function VikingScene() {
   const reduce = useReducedMotion();
   const list = { hidden: {}, show: { transition: { delayChildren: .3, staggerChildren: .55 } } };
-  const item = { hidden: { opacity: 0, y: 10, scale: .97 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: .32, ease: [.2, .7, .2, 1] } } };
+  const item = { hidden: { opacity: 0, y: 8, scale: .97 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: .3, ease: [.2, .7, .2, 1] } } };
   return (
-    <figure className="scene" aria-label="Example: a Viking joins the Galdus early access and chats with Galdus">
-      <div className="phone" aria-hidden="true">
-        <div className="phone-screen">
-          <span className="phone-notch" />
-          <div className="phone-bar"><Mark size={18} interactive={false} /><b>Galdus<i>.ai</i></b></div>
-          <div className="phone-hero"><VikingPlaceholder /><b>Welcome aboard, Erik!</b><small>Your workspace is ready.</small></div>
-          <div className="phone-card">
-            <small>Early access</small>
-            <span className="phone-field">erik@fjord.no</span>
-            <span className="phone-btn">You're on the list</span>
-          </div>
+    <figure className="scene" aria-label="Example conversation between a Viking and Galdus">
+      <div className="scene-card">
+        <div className="scene-head" aria-hidden="true">
+          <Mark size={22} interactive={false} />
+          <b>Galdus</b>
+          <span className="scene-live"><i />online</span>
         </div>
+        <motion.ol className="scene-chat" variants={list} initial={reduce ? 'show' : 'hidden'} whileInView="show" viewport={{ once: true, amount: .15 }}>
+          {SCENE_CHAT.map(([who, text], i) => (
+            <motion.li key={i} className={`sbub ${who}`} variants={reduce ? undefined : item}>
+              <b className="sbub-who">{who === 'viking' ? 'Vichingo' : 'Galdus'}:</b> {text}
+            </motion.li>
+          ))}
+        </motion.ol>
+        <div className="scene-input" aria-hidden="true"><span>Scrivi a Galdus…</span><SendHorizontal size={15} /></div>
       </div>
-      <motion.ol className="scene-chat" variants={list} initial={reduce ? 'show' : 'hidden'} whileInView="show" viewport={{ once: true, amount: .15 }}>
-        {SCENE_CHAT.map(([who, text], i) => (
-          <motion.li key={i} className={`sbub ${who}`} variants={reduce ? undefined : item}>
-            <span className="sbub-who">{who === 'viking' ? 'Vichingo' : 'Galdus'}</span>
-            <span className="sbub-text">{text}</span>
-          </motion.li>
-        ))}
-      </motion.ol>
+      <div className="scene-viking">
+        <img src={vikingPhone} alt="A smiling Viking with the Galdus lime warpaint, reading the chat on his phone" width="393" height="532" loading="lazy" decoding="async" />
+      </div>
     </figure>
-  );
-}
-
-/* PLACEHOLDER illustration: replace with the final Viking artwork when available
-   (keep the data-placeholder attribute until then so it is easy to find). */
-function VikingPlaceholder() {
-  return (
-    <svg className="viking-ph" data-placeholder="viking-illustration" viewBox="0 0 160 150" role="img" aria-label="Smiling Viking (placeholder)">
-      <defs>
-        <linearGradient id="vk-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#D8FF66" /><stop offset="1" stopColor="#B6FF00" /></linearGradient>
-        <linearGradient id="vk-helm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2C4F80" /><stop offset="1" stopColor="#173763" /></linearGradient>
-      </defs>
-      <rect width="160" height="150" rx="22" fill="url(#vk-bg)" />
-      <path d="M44 62C30 58 22 44 26 28c5 12 14 18 26 20z" fill="#F8FAFC" stroke="#0B1F3B" strokeWidth="2" />
-      <path d="M116 62c14-4 22-18 18-34-5 12-14 18-26 20z" fill="#F8FAFC" stroke="#0B1F3B" strokeWidth="2" />
-      <ellipse cx="80" cy="88" rx="36" ry="38" fill="#F2C9A0" />
-      <path d="M42 70c0-26 16-42 38-42s38 16 38 42z" fill="url(#vk-helm)" />
-      <rect x="38" y="64" width="84" height="11" rx="5.5" fill="#0B1F3B" />
-      <circle cx="58" cy="69.5" r="2" fill="#9DB0CB" /><circle cx="80" cy="69.5" r="2" fill="#9DB0CB" /><circle cx="102" cy="69.5" r="2" fill="#9DB0CB" />
-      <path d="M48 94c20-5 44-5 64 0" stroke="#B6FF00" strokeWidth="7" strokeLinecap="round" opacity=".8" />
-      <path d="M58 88q6-7 12 0M90 88q6-7 12 0" stroke="#0B1F3B" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <circle cx="56" cy="100" r="5" fill="#F29C8A" opacity=".5" /><circle cx="104" cy="100" r="5" fill="#F29C8A" opacity=".5" />
-      <path d="M44 98c2 30 18 48 36 48s34-18 36-48c-6 10-16 14-24 12-4-4-20-4-24 0-8 2-18-2-24-12z" fill="#C9763A" />
-      <path d="M68 112q12 14 24 0z" fill="#7A2E1E" stroke="#0B1F3B" strokeWidth="2.4" strokeLinejoin="round" />
-      <path d="M70 113h20" stroke="#F8FAFC" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M80 104c-6-4-14-4-18 2 6 1 12 0 18-2zm0 0c6-4 14-4 18 2-6 1-12 0-18-2z" fill="#A65E2B" />
-      <ellipse cx="80" cy="99" rx="4.5" ry="3.5" fill="#E2A97E" />
-      <path d="M80 124v14" stroke="#A65E2B" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="80" cy="140" r="3.4" fill="#B6FF00" stroke="#0B1F3B" strokeWidth="1.5" />
-    </svg>
   );
 }
