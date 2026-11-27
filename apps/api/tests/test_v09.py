@@ -115,3 +115,14 @@ def test_shared_rate_limit(client, monkeypatch):
     codes = [client.post("/api/v1/auth/mfa/verify", json={"mfa_token": "x" * 20, "code": "123456"},
                          headers={"X-Forwarded-For": "203.0.113.9"}).status_code for _ in range(12)]
     assert 429 in codes and codes.count(401) <= 10
+
+
+def test_qr_code_scales_to_its_box_with_a_full_quiet_zone():
+    # Regression: the SVG had a fixed 318 px size and no viewBox, so the 200 px box cropped it and
+    # authenticator apps could not read it.
+    svg = mfa.qr_svg(mfa.otpauth_uri("JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP", "someone@example.com"))
+    head = svg.split(">", 1)[0]
+    assert 'viewBox="0 0 ' in head and "width=" not in head and "height=" not in head
+    side = int(head.split('viewBox="0 0 ')[1].split(" ")[0])
+    modules = side // 10
+    assert svg.count('d="M0 0h') == 1 and f"h{modules}v{modules}" in svg  # one background, the whole symbol plus border

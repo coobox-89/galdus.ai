@@ -40,6 +40,7 @@ Release candidate after the production-readiness review ([security review](docs/
 - Chat errors are shown inside the reply ("No answer" with the reason and a shortcut to Models), not only as a toast.
 - Faster sign-in on small instances: Argon2id with OWASP's minimum parameters (19 MiB, 2 iterations, 1 lane), about six times less CPU; older hashes are upgraded at the next sign-in.
 - The uptime check runs every 10 minutes, which also keeps the free Render instance awake.
+- Two-step verification: the QR code can be scanned again (it was cropped by its box because the SVG had a fixed size and no viewBox; it now scales and has the full quiet zone, on a white background).
 - Deleting an account now signs out to the sign-in page with a confirmation.
 
 ### Fixed

@@ -732,7 +732,7 @@ input[type=range] { accent-color: var(--lime); padding: 0; background: none; bor
 .otp.big { width: 260px; font-size: 30px; padding: 14px; }
 .mfa-ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: var(--night); background: var(--grad-lime); box-shadow: var(--glow-lime); }
 .mfa-scan { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; }
-.mfa-scan .qr { width: 220px; height: 220px; padding: 10px; border-radius: 18px; background: #F8FAFC; box-shadow: 0 0 0 4px rgba(182, 255, 0, .35), 0 20px 40px -12px rgba(0, 0, 0, .6); }
+.mfa-scan .qr { width: 220px; height: 220px; padding: 10px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 0 0 4px rgba(182, 255, 0, .35), 0 20px 40px -12px rgba(0, 0, 0, .6); }
 .mfa-scan .qr svg { width: 100%; height: 100%; display: block; }
 .mfa-key { display: block; padding: 10px 12px; border-radius: 10px; background: rgba(7, 21, 48, .7); border: 1px solid var(--night-line); color: #E8F5C8; font-size: 14px; letter-spacing: .06em; word-break: break-all; }
 .recovery { display: grid; gap: 10px; }

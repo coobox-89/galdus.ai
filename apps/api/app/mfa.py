@@ -94,7 +94,10 @@ def qr_svg(data: str) -> str:
     import segno
     import io
     buf = io.BytesIO()
-    segno.make(data, error="m").save(buf, kind="svg", scale=6, border=2, dark="#0B1F3B", light="#F8FAFC", xmldecl=False, svgns=True)
+    # omitsize: a viewBox instead of a fixed width/height, so the code scales to its box instead of being
+    # cropped (a cropped finder pattern made the code unreadable). border=4: the quiet zone the QR spec requires.
+    segno.make(data, error="m").save(buf, kind="svg", scale=10, border=4, dark="#0B1F3B", light="#FFFFFF", xmldecl=False,
+                                     svgns=True, omitsize=True)
     return buf.getvalue().decode()
 
 
