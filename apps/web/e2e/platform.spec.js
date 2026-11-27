@@ -39,6 +39,24 @@ test('register a workspace', async () => {
   await expect(page.getByText('Set up your workspace')).toBeVisible();
 });
 
+test('first-run tour: walk through every step and finish', async () => {
+  const tour = page.getByRole('dialog', { name: 'Welcome to Galdus' });
+  await expect(tour).toBeVisible();
+  const titles = ['Connect a model', 'Chat', 'Knowledge', 'Agents', 'Automations', 'Account and security'];
+  for (const title of titles) {
+    await page.getByRole('button', { name: /^Next/ }).click();
+    await expect(page.getByRole('dialog', { name: title })).toBeVisible();
+  }
+  await expect(page.getByText('Step 7 of 7')).toBeVisible();
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // Saved on the account: a reload does not bring it back.
+  await page.reload();
+  await expect(page.locator('nav')).toBeVisible();
+  await expect(page.locator('.tour-panel')).toHaveCount(0);
+  await nav('Home');
+});
+
 test('connect a model with the wizard', async () => {
   await nav('Models');
   await page.locator('.prov-card', { hasText: 'OpenAI-compatible' }).click();

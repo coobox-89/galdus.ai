@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Download, KeyRound, LogOut, Sparkles, Trash2 } from 'lucide-react';
+import { Compass, Download, KeyRound, LogOut, Sparkles, Trash2 } from 'lucide-react';
 import { useWs } from './workspace';
 import { PageHead } from './ui';
 import { ProfileCard, SecurityCard } from './profile';
+import { useTour } from './tour';
 
 const STYLES = [['concise', 'Concise', 'Short answers, straight to the point.'], ['balanced', 'Balanced', 'The answer first, then what matters.'],
   ['detailed', 'Detailed', 'Thorough answers with steps and examples.']];
 
 export function AccountPage({ go }) {
   const ws = useWs();
+  const tour = useTour();
   const token = new URLSearchParams(window.location.hash.split('?')[1] || '').get('invite');
   const [prefs, setPrefs] = useState(null);
   const [pw, setPw] = useState({ current_password: '', new_password: '' });
@@ -90,6 +92,11 @@ export function AccountPage({ go }) {
             <div className="acct-actions"><button className="btn ghost">{prefs.has_password ? 'Change password' : 'Set password'}</button></div>
           </form>)}
       </div>
+
+      <h2 className="acct-group">Help</h2>
+      <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><Compass size={18} /> Guided tour</h3></div>
+        <p className="acct-desc">A one-minute walk through Home, models, chat, knowledge, agents, automations and your account.</p>
+        <div className="acct-actions"><button type="button" className="btn ghost" onClick={tour.start}>Replay the tour</button></div></div>
 
       <h2 className="acct-group">Your data</h2>
       <div className="acct-grid three">
