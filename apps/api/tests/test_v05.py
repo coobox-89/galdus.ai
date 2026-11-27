@@ -95,12 +95,13 @@ def test_oauth_rejects_state_for_other_provider(client, monkeypatch):
 def test_password_reset_and_change(client, monkeypatch):
     sent = []
 
-    async def fake_send(to, subject, title, body, button, url):
+    async def fake_send(to, subject, title, body, button, url, note=""):
         sent.append(url)
         return True
     monkeypatch.setattr(accounts, "send", fake_send)
     monkeypatch.setattr(accounts, "email_enabled", lambda: True)
     email, h = register(client)
+    sent.clear()  # the verification email sent at registration
     assert client.post("/api/v1/auth/password/forgot", json={"email": "nobody@example.com"}).status_code == 202
     assert sent == []
     assert client.post("/api/v1/auth/password/forgot", json={"email": email}).status_code == 202

@@ -8,7 +8,7 @@ const Ctx = createContext(null);
 export const useWs = () => useContext(Ctx);
 
 // Holds the session-wide workspace state every page needs.
-export function WorkspaceProvider({ token, user, onExpired, onToken, onSignOut, children }) {
+export function WorkspaceProvider({ token, user, setUser, onExpired, onToken, onSignOut, children }) {
   const toast = useToast();
   const [organizations, setOrganizations] = useState([]);
   const [organizationId, setOrganizationId] = useState(() => localStorageGet('galdus_ws'));
@@ -48,7 +48,7 @@ export function WorkspaceProvider({ token, user, onExpired, onToken, onSignOut, 
   const value = useMemo(() => {
     const role = organizations.find(o => o.id === organizationId)?.role;
     return {
-      token, user, onToken, onSignOut, organizations, organizationId, setOrganizationId, role,
+      token, user, setUser, onToken, onSignOut, organizations, organizationId, setOrganizationId, role,
       canManage: role === 'owner' || role === 'admin', isOwner: role === 'owner',
       sources, collections, onError, toast,
       refresh: () => setVersion(v => v + 1), reloadOrganizations: loadOrgs,
@@ -56,7 +56,7 @@ export function WorkspaceProvider({ token, user, onExpired, onToken, onSignOut, 
       // Opens the connect wizard; resolves to { connectionId, model } or null if cancelled.
       connectModel: (provider = '', model = '') => new Promise(resolve => setWizard({ provider, model, resolve })),
     };
-  }, [token, user, onToken, onSignOut, organizations, organizationId, sources, collections, onError, toast, loadOrgs]);
+  }, [token, user, setUser, onToken, onSignOut, organizations, organizationId, sources, collections, onError, toast, loadOrgs]);
 
   return (
     <Ctx.Provider value={value}>

@@ -2,6 +2,16 @@
 
 # Changelog
 
+## 0.9.0 (2026-11-27)
+
+- Two-step verification (opt-in, off by default): authenticator-app codes (TOTP, RFC 6238) with replay protection and ten single-use recovery codes. Guided setup with QR code; required on every sign-in, including Google and GitHub, once on.
+- Profile card: editable photo with a drag-and-zoom editor (saved as a 256 px image), name, email with its verification status.
+- Email verification at registration with a branded HTML email (also used for password reset and invitations), a reminder banner and "send again". `REQUIRE_EMAIL_VERIFICATION=true` blocks password sign-in until confirmed.
+- Shared rate limits: `RATE_LIMIT_BACKEND=postgres` counts requests in the database, so limits hold across several API instances.
+- End-to-end tests (Playwright) run on every push: register, connect a model, chat, knowledge, agents, automations, team invite and two-step sign-in.
+- Final privacy policy, terms of service and acceptable use policy (GDPR), with the operator details set from repository variables. Retention promised there is enforced by the scheduler.
+- API: `/api/v1/auth/mfa/*`, `/api/v1/auth/verify-email`, `/api/v1/auth/me/profile`, `/api/v1/auth/me/avatar`. Migration 0010.
+
 ## 0.8.0 (2026-11-27)
 
 - Security review: sessions revoked on password change, password reset and the new "Sign out everywhere"; Google and GitHub sign-in bound to the browser that started it; only owners and admins change knowledge or use connected drives; chat images checked by file signature; dependency audit in CI.

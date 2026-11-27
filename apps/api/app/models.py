@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, Computed, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, false
+from sqlalchemy import BigInteger, Boolean, Computed, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, false
 from sqlalchemy import true as sa_true
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID
@@ -24,6 +24,16 @@ class User(Base):
     has_password: Mapped[bool] = mapped_column(Boolean, default=True, server_default=sa_true())
     # Access tokens issued before this moment are rejected (password change, sign out everywhere).
     tokens_valid_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Small square profile photo as a data URL (resized in the browser, at most ~150 KB).
+    avatar: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # TOTP secret, encrypted with ENCRYPTION_KEY. Set during setup; only used once mfa_enabled is true.
+    mfa_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # SHA-256 hashes of the unused recovery codes.
+    mfa_recovery: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+    # Last TOTP time step accepted, so a code cannot be replayed.
+    mfa_last_step: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     memberships: Mapped[list["Membership"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
@@ -255,6 +265,23 @@ class PasswordReset(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class EmailVerification(Base):
+    __tablename__ = "email_verifications"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class RateLimitCounter(Base):
+    __tablename__ = "rate_limit_counters"
+    key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer)
 
 
 class Conversation(Base):

@@ -147,7 +147,7 @@ async def delete_connection(connection_id: uuid.UUID, membership: Membership = D
 
 @router.post("/connections/{connection_id}/test")
 async def test_connection(connection_id: uuid.UUID, body: TestRequest, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
-    enforce(f"model-test:{membership.user_id}", 10)
+    await enforce(f"model-test:{membership.user_id}", 10)
     conn = await get_connection(db, membership, connection_id)
     kwargs = call_kwargs(conn, body.model.strip())
     try:
@@ -165,7 +165,7 @@ async def test_connection(connection_id: uuid.UUID, body: TestRequest, membershi
 async def check_key(body: KeyCheck, membership: Membership = Depends(current_membership)):
     """Try a key before it is saved, so the connect wizard can tell the user what to fix."""
     require_manager(membership)
-    enforce(f"model-test:{membership.user_id}", 10)
+    await enforce(f"model-test:{membership.user_id}", 10)
     spec = PROVIDERS.get(body.provider)
     if not spec:
         raise HTTPException(status_code=400, detail="Unknown provider")

@@ -34,6 +34,10 @@ jobs:
         env:
           # Override with a repository variable if the API hostname differs.
           VITE_API_BASE_URL: ${{ vars.GALDUS_API_BASE_URL || 'https://galdus-api.onrender.com/api' }}
+          VITE_LEGAL_OPERATOR: ${{ vars.LEGAL_OPERATOR }}
+          VITE_LEGAL_ADDRESS: ${{ vars.LEGAL_ADDRESS }}
+          VITE_LEGAL_EMAIL: ${{ vars.LEGAL_EMAIL }}
+          VITE_LEGAL_COUNTRY: ${{ vars.LEGAL_COUNTRY }}
       - name: SPA fallback for deep links (/privacy, /terms, ...)
         run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

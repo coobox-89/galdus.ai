@@ -134,7 +134,7 @@ async def list_invitations(membership: Membership = Depends(current_membership),
 @router.post("/org/invitations", status_code=201)
 async def invite(body: InviteIn, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     require_role(membership, "owner", "admin")
-    enforce(f"invite:{membership.user_id}", 20)
+    await enforce(f"invite:{membership.user_id}", 20)
     token = secrets.token_urlsafe(32)
     inv = Invitation(organization_id=membership.organization_id, email=str(body.email).lower(), role=body.role,
                      token_hash=token_hash(token), invited_by=membership.user_id,
@@ -147,8 +147,8 @@ async def invite(body: InviteIn, membership: Membership = Depends(current_member
     from .config import settings
     link = f"{settings.frontend_url.rstrip('/')}/#/account?invite={token}"
     emailed = await send_email(inv.email, f"You are invited to {org.name} on Galdus.ai", f"Join {org.name}",
-                               f"You have been invited to the {org.name} workspace as {inv.role}. The invitation is valid for {INVITE_DAYS} days.",
-                               "Accept invitation", link)
+                               f"You have been invited to the {org.name} workspace on Galdus.ai as {inv.role}. Sign in or create an account with this address, then accept. The invitation is valid for {INVITE_DAYS} days.",
+                               "Accept invitation", link, "If you were not expecting this invitation you can ignore this email.")
     # The token is also returned once, so the inviter can share the link when email is not configured.
     return {"id": str(inv.id), "email": inv.email, "role": inv.role, "token": token, "emailed": emailed,
             "expires_at": inv.expires_at.isoformat()}
@@ -167,7 +167,7 @@ async def revoke_invitation(invitation_id: uuid.UUID, membership: Membership = D
 
 @router.post("/invitations/accept")
 async def accept_invitation(body: AcceptIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    enforce(f"accept:{user.id}", 10)
+    await enforce(f"accept:{user.id}", 10)
     inv = await db.scalar(select(Invitation).where(Invitation.token_hash == token_hash(body.token)))
     if not inv or inv.accepted_at or inv.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="This invitation is invalid or has expired")

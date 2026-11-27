@@ -1,5 +1,6 @@
 """Sign-in with Google/GitHub, password reset and change, chat preferences."""
 import hashlib
+import re
 import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -16,7 +17,7 @@ from .config import settings
 from .db import get_db
 from .identity import auth_rate_limit, current_user, make_slug
 from .mailer import email_enabled, send
-from .models import Membership, Organization, PasswordReset, User, UserIdentity
+from .models import EmailVerification, Membership, Organization, PasswordReset, User, UserIdentity
 from .oauth import PROVIDERS, authorize_url, configured, exchange_code, fetch_identity, read_state
 from .ratelimit import client_ip, enforce
 
@@ -42,7 +43,7 @@ async def providers():
 
 @router.get("/oauth/{provider}/start")
 async def oauth_start(provider: str, request: Request):
-    enforce(f"oauth:{client_ip(request)}", 20)
+    await enforce(f"oauth:{client_ip(request)}", 20)
     if provider not in LOGIN_PROVIDERS:
         raise HTTPException(status_code=404, detail="Unknown provider")
     extra = {"prompt": "select_account"} if provider == "google" else {}
@@ -64,13 +65,15 @@ async def _login_user(db: AsyncSession, provider: str, ident: dict) -> User:
     if not user:
         name = (ident["name"] or ident["email"].split("@")[0])[:160]
         user = User(email=ident["email"], full_name=name, password_hash=hash_password(secrets.token_urlsafe(32)), has_password=False,
-                    is_platform_admin=ident["email"] in settings.admin_email_list)
+                    is_platform_admin=ident["email"] in settings.admin_email_list, email_verified_at=datetime.now(timezone.utc))
         org_name = f"{name.split(' ')[0]}'s workspace"
         org = Organization(name=org_name, slug=make_slug(org_name))
         db.add_all([user, org])
         await db.flush()
         db.add(Membership(user_id=user.id, organization_id=org.id, role="owner"))
     db.add(UserIdentity(user_id=user.id, provider=provider, subject=ident["subject"], email=ident["email"]))
+    if user.email_verified_at is None:
+        user.email_verified_at = datetime.now(timezone.utc)  # the provider verified this address
     await db.commit()
     return user
 
@@ -91,6 +94,11 @@ async def oauth_callback(provider: str, request: Request, code: str | None = Non
         user = await _login_user(db, provider, await fetch_identity(provider, tokens["access_token"]))
     except HTTPException as exc:
         resp = RedirectResponse(_frontend(f"oauth?error={quote(str(exc.detail))}"), status_code=302)
+        resp.delete_cookie(OAUTH_COOKIE, path="/api/v1/auth/oauth")
+        return resp
+    if user.mfa_enabled:
+        from .auth import create_mfa_token
+        resp = RedirectResponse(_frontend(f"oauth?mfa_token={create_mfa_token(str(user.id))}"), status_code=302)
         resp.delete_cookie(OAUTH_COOKIE, path="/api/v1/auth/oauth")
         return resp
     token = create_access_token(str(user.id))
@@ -124,8 +132,9 @@ async def forgot(body: ForgotIn, db: AsyncSession = Depends(get_db)):
         db.add(PasswordReset(user_id=user.id, token_hash=_hash(token), expires_at=datetime.now(timezone.utc) + timedelta(hours=RESET_HOURS)))
         await db.commit()
         await send(user.email, "Reset your Galdus.ai password", "Reset your password",
-                   f"Someone asked to reset the password for {user.email}. The link works once, for {RESET_HOURS} hour.",
-                   "Choose a new password", _frontend(f"reset?token={token}"))
+                   f"Someone asked to reset the password for {user.email}. Choose a new one with the button below. The link works once, for {RESET_HOURS} hour.",
+                   "Choose a new password", _frontend(f"reset?token={token}"),
+                   "If you did not ask for this, ignore this email: your password stays the same.")
     return {"email_enabled": email_enabled()}
 
 
@@ -137,6 +146,7 @@ async def reset(body: ResetIn, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, pr.user_id)
     user.password_hash, user.has_password = hash_password(body.password), True
     user.tokens_valid_after = _revoke_now()
+    user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)  # the reset link proved the address
     pr.used_at = datetime.now(timezone.utc)
     await db.commit()
     return {"ok": True}
@@ -144,7 +154,7 @@ async def reset(body: ResetIn, db: AsyncSession = Depends(get_db)):
 
 @router.post("/password/change")
 async def change(body: ChangeIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    enforce(f"pwchange:{user.id}", 10)
+    await enforce(f"pwchange:{user.id}", 10)
     if user.has_password and not (body.current_password and verify_password(body.current_password, user.password_hash)):
         raise HTTPException(status_code=400, detail="Your current password is not correct.")
     user.password_hash, user.has_password = hash_password(body.new_password), True
@@ -187,3 +197,100 @@ async def put_prefs(body: PrefsIn, user: User = Depends(current_user), db: Async
     user.full_name, user.custom_instructions, user.response_style = body.full_name.strip(), body.custom_instructions.strip(), body.response_style
     await db.commit()
     return await get_prefs(user, db)
+
+
+# ---- Email verification -----------------------------------------------------
+
+VERIFY_HOURS = 48
+
+
+async def send_verification(db: AsyncSession, user: User) -> bool:
+    """Email a single-use link that confirms the address. Best effort when email is not configured."""
+    if user.email_verified_at or not email_enabled():
+        return False
+    token = secrets.token_urlsafe(32)
+    db.add(EmailVerification(user_id=user.id, token_hash=_hash(token), expires_at=datetime.now(timezone.utc) + timedelta(hours=VERIFY_HOURS)))
+    await db.commit()
+    first = (user.full_name or "").split(" ")[0] or "there"
+    return await send(user.email, "Confirm your email for Galdus.ai", f"Welcome, {first}",
+                      f"One last step: confirm that {user.email} is your address, so we can keep your account safe and reach you about it. "
+                      f"The link is valid for {VERIFY_HOURS} hours.",
+                      "Confirm my email", _frontend(f"verify?token={token}"),
+                      "You get this email because this address was used to create a Galdus.ai account. If it was not you, ignore it.")
+
+
+class VerifyIn(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+
+
+@router.post("/verify-email", dependencies=[Depends(auth_rate_limit)])
+async def verify_email(body: VerifyIn, db: AsyncSession = Depends(get_db)):
+    ev = await db.scalar(select(EmailVerification).where(EmailVerification.token_hash == _hash(body.token)))
+    if not ev or ev.used_at or ev.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="This link is invalid or has expired. Ask for a new one from your account.")
+    user = await db.get(User, ev.user_id)
+    now = datetime.now(timezone.utc)
+    ev.used_at = now
+    if user and not user.email_verified_at:
+        user.email_verified_at = now
+    await db.commit()
+    return {"ok": True, "email": user.email if user else None}
+
+
+@router.post("/verify-email/resend")
+async def resend_verification(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    await enforce(f"verify-resend:{user.id}", 3)
+    if user.email_verified_at:
+        return {"sent": False, "verified": True}
+    return {"sent": await send_verification(db, user), "verified": False}
+
+
+# ---- Profile ----------------------------------------------------------------
+
+MAX_AVATAR_BYTES = 150_000
+
+
+class ProfileIn(BaseModel):
+    full_name: str = Field(min_length=1, max_length=160)
+
+
+class AvatarIn(BaseModel):
+    image: str = Field(min_length=30, max_length=220_000)
+
+
+@router.put("/me/profile")
+async def update_profile(body: ProfileIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    name = body.full_name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Your name cannot be blank")
+    user.full_name = name
+    await db.commit()
+    return {"full_name": user.full_name}
+
+
+@router.put("/me/avatar")
+async def update_avatar(body: AvatarIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    import base64
+    import binascii
+    m = re.fullmatch(r"data:image/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)", body.image)
+    if not m:
+        raise HTTPException(status_code=400, detail="Use a PNG, JPEG or WebP image")
+    try:
+        data = base64.b64decode(m.group(2), validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="The image could not be read")
+    ok = data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff") or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+    if not ok:
+        raise HTTPException(status_code=400, detail="The file is not a valid image")
+    if len(data) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=413, detail="The photo is too large. Try a smaller one.")
+    user.avatar = body.image
+    await db.commit()
+    return {"avatar": user.avatar}
+
+
+@router.delete("/me/avatar")
+async def delete_avatar(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    user.avatar = None
+    await db.commit()
+    return {"avatar": None}

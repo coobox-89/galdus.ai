@@ -146,7 +146,7 @@ def _looks_like_image(data: bytes) -> bool:
 @router.post("/chat/attachments")
 async def attachment(file: UploadFile = File(...), membership: Membership = Depends(current_membership)):
     """Extract a chat attachment. Nothing is stored: the client sends it back with the message."""
-    enforce(f"attach:{membership.user_id}", 30)
+    await enforce(f"attach:{membership.user_id}", 30)
     name = (file.filename or "file").strip()[:300]
     data = await file.read(MAX_IMAGE_BYTES + 1)
     ext = "." + name.lower().rsplit(".", 1)[-1] if "." in name else ""

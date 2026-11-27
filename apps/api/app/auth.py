@@ -29,3 +29,21 @@ def decode_access_claims(token: str) -> tuple[str, int]:
     if not isinstance(subject, str):
         raise jwt.InvalidTokenError("Missing subject")
     return subject, int(payload.get("iat", 0))
+
+
+MFA_AUDIENCE = "galdus-mfa"
+
+
+def create_mfa_token(subject: str) -> str:
+    """Short-lived proof that the password (or OAuth) step passed; only exchangeable for a session with a second factor.
+    The audience makes it unusable as an access token."""
+    now = datetime.now(timezone.utc)
+    return jwt.encode({"sub": subject, "aud": MFA_AUDIENCE, "iat": now, "exp": now + timedelta(minutes=5)}, settings.jwt_secret, algorithm="HS256")
+
+
+def decode_mfa_token(token: str) -> str:
+    payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"], audience=MFA_AUDIENCE)
+    subject = payload.get("sub")
+    if not isinstance(subject, str):
+        raise jwt.InvalidTokenError("Missing subject")
+    return subject

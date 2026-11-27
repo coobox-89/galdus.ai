@@ -15,6 +15,7 @@ from .tools import router as integrations_router
 from .accounts import router as accounts_router
 from .connectors import router as connectors_router
 from .conversations import router as conversations_router
+from .mfa import router as mfa_router
 from .chat import router as chat_router
 from .connections import router as models_router
 from .config import settings
@@ -27,7 +28,7 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="Galdus.ai API",
-    version="0.8.0",
+    version="0.9.0",
     docs_url="/docs" if settings.docs_enabled else None,
     redoc_url="/redoc" if settings.docs_enabled else None,
     openapi_url="/openapi.json" if settings.docs_enabled else None,
@@ -77,6 +78,7 @@ app.include_router(integrations_router)
 app.include_router(accounts_router)
 app.include_router(connectors_router)
 app.include_router(conversations_router)
+app.include_router(mfa_router)
 
 
 @app.get("/health")

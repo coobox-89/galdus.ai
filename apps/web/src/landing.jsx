@@ -26,13 +26,16 @@ function ProviderMark({ id }) {
   return <img src={`${BASE}/brand/${id}.svg`} alt="" width="20" height="20" onError={() => setOk(false)} />;
 }
 
-export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
+export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaToken: initialMfa = '', notice = '' }) {
   const reduce = useReducedMotion();
-  const [mode, setMode] = useState(resetToken ? 'reset' : 'login');
+  const [mode, setMode] = useState(initialMfa ? 'mfa' : resetToken ? 'reset' : 'login');
+  const [mfaToken, setMfaToken] = useState(initialMfa);
+  const [code, setCode] = useState('');
+  const [recovery, setRecovery] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', full_name: '', organization_name: '' });
   const [busy, setBusy] = useState(false);
   const [providers, setProviders] = useState({ login: [], email: false });
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(notice);
   const emailRef = useRef(null);
   useEffect(() => { api('/v1/auth/providers').then(setProviders).catch(() => {}); }, []);
   const set = k => e => setForm({ ...form, [k]: e.target.value });
@@ -50,10 +53,14 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
       } else if (mode === 'reset') {
         await api('/v1/auth/password/reset', { method: 'POST', body: { token: resetToken, password: form.password } });
         window.location.hash = ''; setMode('login'); setNote('Password updated. Sign in with your new password.');
+      } else if (mode === 'mfa') {
+        onAuthenticated(await api('/v1/auth/mfa/verify', { method: 'POST', body: { mfa_token: mfaToken, code: code.trim() } }));
       } else {
         const registering = mode === 'register';
-        onAuthenticated(await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
-          method: 'POST', body: registering ? form : { email: form.email, password: form.password } }));
+        const r = await api(registering ? '/v1/auth/register' : '/v1/auth/login', {
+          method: 'POST', body: registering ? form : { email: form.email, password: form.password } });
+        if (r.mfa_required) { setMfaToken(r.mfa_token); setCode(''); setRecovery(false); setMode('mfa'); return; }
+        onAuthenticated(r);
       }
     } catch (err) { setMessage(err.message); } finally { setBusy(false); }
   }
@@ -63,6 +70,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
     register: ['Create your workspace', 'Free during early access. No card needed.', 'Create workspace'],
     forgot: ['Reset your password', 'We will email you a link to choose a new one.', 'Send reset link'],
     reset: ['Choose a new password', 'At least 12 characters.', 'Save new password'],
+    mfa: ['Two-step verification', recovery ? 'Enter one of your recovery codes. Each one works once.' : 'Enter the 6-digit code from your authenticator app.', 'Verify and sign in'],
   }[mode];
 
   return (
@@ -111,8 +119,17 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
                 <label className="field">Full name<input value={form.full_name} onChange={set('full_name')} autoComplete="name" required maxLength={160} /></label>
                 <label className="field">Workspace name<input value={form.organization_name} onChange={set('organization_name')} required minLength={2} maxLength={160} placeholder="Your company or team" /></label>
               </>}
-              {mode !== 'reset' && <label className="field">Email<input ref={emailRef} type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>}
-              {mode !== 'forgot' && (
+              {mode === 'mfa' && <>
+                <span className="mfa-ico" aria-hidden="true"><ShieldCheck size={26} /></span>
+                <label className="field">{recovery ? 'Recovery code' : 'Authentication code'}
+                  <input className={recovery ? '' : 'otp'} value={code} onChange={e => setCode(recovery ? e.target.value : e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    inputMode={recovery ? 'text' : 'numeric'} autoComplete="one-time-code" autoFocus required minLength={6} maxLength={recovery ? 20 : 6}
+                    placeholder={recovery ? 'abc123-def456' : '••••••'} /></label>
+                <button type="button" className="linkish" style={{ justifySelf: 'start' }} onClick={() => { setRecovery(r => !r); setCode(''); }}>
+                  {recovery ? 'Use the authenticator app instead' : 'Lost your phone? Use a recovery code'}</button>
+              </>}
+              {mode !== 'reset' && mode !== 'mfa' && <label className="field">Email<input ref={emailRef} type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>}
+              {mode !== 'forgot' && mode !== 'mfa' && (
                 <label className="field">
                   <span className="lh-row">{mode === 'reset' ? 'New password' : 'Password'}
                     {mode === 'login' && <button type="button" className="linkish" onClick={() => { setMode('forgot'); setMessage(''); }}>Forgot password?</button>}</span>
@@ -125,7 +142,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
             </form>
             <p className="lh-switch">
               {mode === 'login' && <>New to Galdus.ai? <button type="button" className="linkish" onClick={() => { setMode('register'); setMessage(''); }}>Create a workspace</button></>}
-              {mode !== 'login' && <>Back to <button type="button" className="linkish" onClick={() => { setMode('login'); setMessage(''); window.location.hash = ''; }}>sign in</button></>}
+              {mode !== 'login' && <>Back to <button type="button" className="linkish" onClick={() => { setMode('login'); setMfaToken(''); setMessage(''); window.location.hash = ''; }}>sign in</button></>}
             </p>
           </motion.div>
         </motion.section>

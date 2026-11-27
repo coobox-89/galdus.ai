@@ -1,10 +1,12 @@
-"""Small in-process sliding-window rate limiter.
+"""Rate limiting.
 
-This protects a single API instance against brute force and runaway clients.
-It is intentionally dependency-free; for multiple instances use a shared store
-(e.g. Redis) or an edge rate limiter in front of the API.
+RATE_LIMIT_BACKEND=memory (default): in-process sliding window, right for a single API instance.
+RATE_LIMIT_BACKEND=postgres: fixed one-minute windows counted in the shared database, so the
+limits hold across every API instance without extra infrastructure.
 """
+import logging
 import time
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from threading import Lock
 
@@ -47,10 +49,41 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def enforce(key: str, limit: int) -> None:
+logger = logging.getLogger("galdus.ratelimit")
+
+
+async def _shared_hit(key: str, limit: int) -> float | None:
+    """Count the hit in Postgres. Fails open (allows the request) if the database is unavailable."""
+    from sqlalchemy import text
+    from .db import SessionLocal
+    now = datetime.now(timezone.utc)
+    window = now.replace(second=0, microsecond=0)
+    try:
+        async with SessionLocal() as s:
+            count = await s.scalar(text(
+                "insert into rate_limit_counters (key, window_start, count) values (:k, :w, 1) "
+                "on conflict (key, window_start) do update set count = rate_limit_counters.count + 1 returning count"),
+                {"k": key[:200], "w": window})
+            await s.commit()
+    except Exception as exc:  # pragma: no cover - depends on the database being down
+        logger.warning("Shared rate limit unavailable: %s", type(exc).__name__)
+        return None
+    if count > limit:
+        return (window + timedelta(minutes=1) - now).total_seconds()
+    return None
+
+
+async def prune_shared(db) -> int:
+    """Delete finished windows (called by the scheduler tick)."""
+    from sqlalchemy import text
+    r = await db.execute(text("delete from rate_limit_counters where window_start < now() - interval '5 minutes'"))
+    return r.rowcount or 0
+
+
+async def enforce(key: str, limit: int) -> None:
     if not settings.rate_limit_enabled:
         return
-    retry_after = limiter.hit(key, limit)
+    retry_after = await _shared_hit(key, limit) if settings.rate_limit_backend == "postgres" else limiter.hit(key, limit)
     if retry_after is not None:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -59,5 +92,5 @@ def enforce(key: str, limit: int) -> None:
         )
 
 
-def auth_rate_limit(request: Request) -> None:
-    enforce(f"auth:{request.url.path}:{client_ip(request)}", settings.rate_limit_auth_per_minute)
+async def auth_rate_limit(request: Request) -> None:
+    await enforce(f"auth:{request.url.path}:{client_ip(request)}", settings.rate_limit_auth_per_minute)

@@ -45,6 +45,11 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: str
     is_platform_admin: bool = False
+    email_verified: bool = False
+    # True when email is configured on the server and this address is not verified yet.
+    email_verification_pending: bool = False
+    mfa_enabled: bool = False
+    avatar: str | None = None
 
 
 class TokenResponse(BaseModel):
@@ -108,7 +113,19 @@ def make_slug(name: str) -> str:
 
 
 def _user_response(user: User) -> UserResponse:
-    return UserResponse(id=user.id, email=user.email, full_name=user.full_name, is_platform_admin=bool(user.is_platform_admin))
+    from .mailer import email_enabled
+    verified = user.email_verified_at is not None
+    return UserResponse(id=user.id, email=user.email, full_name=user.full_name, is_platform_admin=bool(user.is_platform_admin),
+                        email_verified=verified, email_verification_pending=not verified and email_enabled(),
+                        mfa_enabled=bool(user.mfa_enabled), avatar=user.avatar)
+
+
+def session_or_mfa(user: User) -> dict:
+    """After the first factor: a session, or a short-lived token for the second step when MFA is on."""
+    if user.mfa_enabled:
+        from .auth import create_mfa_token
+        return {"mfa_required": True, "mfa_token": create_mfa_token(str(user.id))}
+    return _token_response(user).model_dump(mode="json")
 
 
 async def require_platform_admin(user: User = Depends(current_user)) -> User:
@@ -144,10 +161,12 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         await db.rollback()
         raise HTTPException(status_code=409, detail="An account with this email already exists")
     await db.refresh(user)
+    from .accounts import send_verification
+    await send_verification(db, user)
     return _token_response(user)
 
 
-@router.post("/login", response_model=TokenResponse, dependencies=[Depends(auth_rate_limit)])
+@router.post("/login", dependencies=[Depends(auth_rate_limit)])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     email = str(body.email).lower()
     user = await db.scalar(select(User).where(User.email == email))
@@ -156,7 +175,10 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise _unauthorized("Invalid email or password")
     if not verify_password(body.password, user.password_hash):
         raise _unauthorized("Invalid email or password")
-    return _token_response(user)
+    from .mailer import email_enabled
+    if settings.require_email_verification and email_enabled() and user.email_verified_at is None:
+        raise HTTPException(status_code=403, detail="Verify your email address first: open the link we sent you, or ask for a new one.")
+    return session_or_mfa(user)
 
 
 @router.get("/me", response_model=UserResponse)

@@ -113,3 +113,15 @@ Secrets are typed directly into the Supabase/Render dashboards. Never paste them
 - No email verification yet. Password reset and invitations by email work once SMTP is configured.
 - Draft privacy, terms and acceptable-use pages exist at `/privacy`, `/terms`, `/acceptable-use`; the owner must complete the bracketed fields and approve them before public sign-ups.
 - Users can download their data (`GET /api/v1/auth/export`) and delete their account (`POST /api/v1/auth/account/delete`).
+
+
+## Security options
+
+| Variable | Default | What it does |
+|:--|:--|:--|
+| `RATE_LIMIT_BACKEND` | `memory` | `postgres` shares rate limits across several API instances through the database. |
+| `REQUIRE_EMAIL_VERIFICATION` | `false` | With SMTP configured, password sign-in waits until the email address is confirmed. |
+
+## Legal pages
+
+The privacy policy, terms and acceptable use policy read the operator details from repository variables at build time (GitHub, Settings, Secrets and variables, Actions, Variables): `LEGAL_OPERATOR`, `LEGAL_ADDRESS`, `LEGAL_EMAIL`, `LEGAL_COUNTRY`. Set at least `LEGAL_EMAIL` before opening public sign-ups.
