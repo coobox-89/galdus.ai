@@ -59,29 +59,3 @@ export function Aurora() {
 export function Wordmark() {
   return <span className="wordmark">Galdus<i>.ai</i></span>;
 }
-
-// Organic brand shape from the identity artwork, used once on the landing page.
-export function Swoosh({ style, flip = false }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.svg className="swoosh" style={style} viewBox="0 0 600 600" aria-hidden="true"
-      initial={reduce ? false : { opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}>
-      <defs>
-        <linearGradient id={flip ? 'sw2' : 'sw1'} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#D8FF4D" />
-          <stop offset=".45" stopColor="#B6FF00" />
-          <stop offset="1" stopColor="#0E5C3A" />
-        </linearGradient>
-      </defs>
-      <motion.path
-        d={flip ? 'M600 120C470 150 360 260 330 400C305 520 380 590 600 600Z' : 'M0 0H420C300 40 190 120 120 260C70 360 40 470 0 600Z'}
-        fill={`url(#${flip ? 'sw2' : 'sw1'})`}
-        animate={reduce ? undefined : { d: flip
-          ? ['M600 120C470 150 360 260 330 400C305 520 380 590 600 600Z', 'M600 90C450 140 350 250 340 390C330 520 400 590 600 600Z', 'M600 120C470 150 360 260 330 400C305 520 380 590 600 600Z']
-          : ['M0 0H420C300 40 190 120 120 260C70 360 40 470 0 600Z', 'M0 0H450C320 60 210 140 150 270C100 380 50 480 0 600Z', 'M0 0H420C300 40 190 120 120 260C70 360 40 470 0 600Z'] }}
-        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-      />
-    </motion.svg>
-  );
-}

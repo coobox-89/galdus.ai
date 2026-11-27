@@ -4,8 +4,6 @@ import { ArrowLeft, ArrowRight, BadgeCheck, Camera, Copy, Download, KeyRound, Ma
 import { useWs } from './workspace';
 import { Done, HowTo, WizardFrame } from './wizardkit';
 
-export const initialsOf = name => (name || '?').split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase();
-
 // Anonymous Viking silhouette on lime: the default picture when no photo is set.
 export function VikingAvatar({ size = 32 }) {
   const id = React.useId().replace(/:/g, '');
@@ -137,7 +135,7 @@ export function ProfileCard() {
           <span className="photo-cam"><Camera size={16} /></span>
         </button>
         <small className="muted photo-hint">PNG, JPEG or WebP. Drag a photo here.</small>
-        <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+        <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Choose a profile photo"
           onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; pick(f); }} />
         <div className="actions">
           <button type="button" className="btn ghost sm" onClick={() => input.current?.click()}><Upload size={14} /> {u.avatar ? 'Change' : 'Upload'}</button>

@@ -102,7 +102,7 @@ async def oauth_callback(provider: str, request: Request, code: str | None = Non
                          db: AsyncSession = Depends(get_db)):
     try:
         if error or not code or not state:
-            raise HTTPException(status_code=400, detail="Sign-in was cancelled.")
+            raise HTTPException(status_code=400, detail="Sign-in was canceled.")
         data = read_state(state)
         if data.get("p") != provider or data.get("purpose") != "login":
             raise HTTPException(status_code=400, detail="Invalid sign-in state. Please try again.")

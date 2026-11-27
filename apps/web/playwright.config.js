@@ -2,6 +2,9 @@ import { defineConfig } from '@playwright/test';
 
 // End-to-end tests run the real API (needs DATABASE_URL), the built console and a fake model server.
 // Build first with VITE_API_BASE_URL=http://127.0.0.1:8000/api.
+// A fresh platform-admin address per run (workers inherit it from the main process), passed to the API.
+process.env.E2E_ADMIN_EMAIL ||= `e2e-admin-${Date.now()}@example.com`;
+process.env.ADMIN_EMAILS ||= process.env.E2E_ADMIN_EMAIL;
 const api = process.env.E2E_API_CMD || 'cd ../api && uvicorn app.main:app --host 127.0.0.1 --port 8000';
 
 export default defineConfig({

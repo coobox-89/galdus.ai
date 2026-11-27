@@ -37,10 +37,10 @@ export function AppsPage({ go }) {
   return (
     <div className="stack">
       <PageHead title="Apps">Ready-made tools for everyday work. Pick one, fill in the form, get a result in seconds.</PageHead>
-      <motion.div className="tiles" role="list" variants={stagger} initial="hidden" animate={apps.length ? 'show' : 'hidden'}>{apps.map(a => {
+      <motion.div className="tiles" role="group" aria-label="Apps" variants={stagger} initial="hidden" animate={apps.length ? 'show' : 'hidden'}>{apps.map(a => {
         const Icon = APP_ICONS[a.id] || FileSearch;
         return (
-        <motion.button variants={rise} key={a.id} type="button" role="listitem" className={`tile ${a.id === appId ? 'active' : ''}`} aria-pressed={a.id === appId}
+        <motion.button variants={rise} key={a.id} type="button" className={`tile ${a.id === appId ? 'active' : ''}`} aria-pressed={a.id === appId}
           onClick={() => { setAppId(a.id); setInputs({}); setRun(null); }}>
           <span className="ico"><Icon size={18} /></span>
           <b>{a.name}</b><small>{a.description}</small>

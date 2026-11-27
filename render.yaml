@@ -29,7 +29,7 @@ services:
       - key: DATABASE_URL
         sync: false   # Supabase session-pooler URL, entered in the Render dashboard
       - key: CORS_ORIGINS
-        value: https://coobox-89.github.io,https://galdus-ai.netlify.app
+        value: https://coobox-89.github.io
       - key: LITELLM_MODEL
         value: openai/gpt-4o-mini
       - key: ALLOWED_MODELS

@@ -4,6 +4,7 @@ import { useWs } from './workspace';
 import { PageHead } from './ui';
 import { ProfileCard, SecurityCard } from './profile';
 import { useTour } from './tour';
+import { API_BASE_URL } from './config';
 
 const STYLES = [['concise', 'Concise', 'Short answers, straight to the point.'], ['balanced', 'Balanced', 'The answer first, then what matters.'],
   ['detailed', 'Detailed', 'Thorough answers with steps and examples.']];
@@ -15,7 +16,9 @@ export function AccountPage({ go }) {
   const [prefs, setPrefs] = useState(null);
   const [pw, setPw] = useState({ current_password: '', new_password: '' });
   const [del, setDel] = useState('');
+  const [apiVersion, setApiVersion] = useState('');
   useEffect(() => { ws.call('/v1/auth/preferences').then(setPrefs).catch(ws.onError); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetch(`${API_BASE_URL.replace(/\/api$/, '')}/health`).then(r => r.json()).then(d => setApiVersion(d.version || '')).catch(() => {}); }, []);
 
   async function accept() {
     try {
@@ -50,7 +53,11 @@ export function AccountPage({ go }) {
     e.preventDefault();
     if (!window.confirm('Delete your account permanently? Workspaces where you are the only member are deleted too.')) return;
     const body = prefs?.has_password === false ? { confirm_email: del } : { password: del };
-    try { await ws.call('/v1/auth/account/delete', { method: 'POST', body }); window.location.hash = ''; window.location.reload(); }
+    try {
+      await ws.call('/v1/auth/account/delete', { method: 'POST', body });
+      history.replaceState(null, '', window.location.pathname);
+      ws.onSignOut?.('Your account and its personal data were deleted.');
+    }
     catch (err) { ws.toast(err.message, 'error'); setDel(''); }
   }
 
@@ -64,7 +71,7 @@ export function AccountPage({ go }) {
       <ProfileCard />
       {prefs && (
         <form className="panel form acct-card" onSubmit={savePrefs}>
-          <div className="acct-head"><h3 className="acct-title"><Sparkles size={18} /> Personalise your chat</h3></div>
+          <div className="acct-head"><h3 className="acct-title"><Sparkles size={18} /> Personalize your chat</h3></div>
           <p className="acct-desc">Galdus adds this to every conversation, so answers fit you without repeating yourself.</p>
           <label className="field">Your name<input value={prefs.full_name} onChange={e => setPrefs({ ...prefs, full_name: e.target.value })} required maxLength={160} /></label>
           <label className="field">What should Galdus know about you?
@@ -96,7 +103,8 @@ export function AccountPage({ go }) {
       <h2 className="acct-group">Help</h2>
       <div className="panel form acct-card"><div className="acct-head"><h3 className="acct-title"><Compass size={18} /> Guided tour</h3></div>
         <p className="acct-desc">A one-minute walk through Home, models, chat, knowledge, agents, automations and your account.</p>
-        <div className="acct-actions"><button type="button" className="btn ghost" onClick={tour.start}>Replay the tour</button></div></div>
+        <div className="acct-actions"><button type="button" className="btn ghost" onClick={tour.start}>Replay the tour</button></div>
+        <small className="muted app-version">Galdus.ai console {__APP_VERSION__}{apiVersion && `, API ${apiVersion}`}</small></div>
 
       <h2 className="acct-group">Your data</h2>
       <div className="acct-grid three">

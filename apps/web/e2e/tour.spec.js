@@ -64,3 +64,13 @@ for (const [label, width, height] of [['phone', 360, 760], ['tablet', 768, 1024]
     await expect(panel).toHaveCount(0);
   });
 }
+
+test('works with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await registerFresh(page);
+  await expect(page.getByRole('dialog', { name: 'Welcome to Galdus' })).toBeVisible();
+  const transition = await page.locator('.tour-spot').evaluate(e => getComputedStyle(e).transitionDuration);
+  expect(['0s', '1e-05s']).toContain(transition);
+  await page.getByRole('button', { name: 'Skip tour' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});

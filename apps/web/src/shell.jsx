@@ -59,7 +59,8 @@ export function Shell({ onLogout }) {
   const [palette, setPalette] = useState(false);
   const nav = useMemo(() => ws.user?.is_platform_admin
     ? NAV.map(g => g.group === 'Manage' ? { ...g, items: [...g.items, ['admin', 'Platform admin']] } : g) : NAV, [ws.user]);
-  const Page = PAGES[route] || HomePage;
+  // The platform console is only for platform admins: anyone else opening #/admin lands on Home.
+  const Page = (route === 'admin' && !ws.user?.is_platform_admin) ? HomePage : (PAGES[route] || HomePage);
   const navigate = r => { go(r); setDrawer(false); setPalette(false); };
 
   useEffect(() => {
@@ -111,6 +112,7 @@ export function Shell({ onLogout }) {
             <div><b>{ws.user?.full_name}</b><small>{ws.user?.email}</small></div>
           </div>
           <button type="button" className="btn ghost sm" onClick={onLogout}><LogOut size={15} /> Sign out</button>
+          <small className="app-version" title="Console version">v{__APP_VERSION__}</small>
         </div>
       </aside>
       <div className={`drawer-scrim ${drawer ? 'open' : ''}`} onClick={() => setDrawer(false)} />

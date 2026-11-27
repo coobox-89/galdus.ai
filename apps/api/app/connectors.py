@@ -80,7 +80,7 @@ async def callback(provider: str, code: str | None = None, state: str | None = N
     drive to whoever started the flow, so a consent link sent to someone else cannot attach their drive
     to another workspace."""
     if error or not code or not state or provider not in {v["oauth"] for v in KINDS.values()}:
-        return RedirectResponse(_front(f"integrations?error={quote('The connection was cancelled.')}"), status_code=302)
+        return RedirectResponse(_front(f"integrations?error={quote('The connection was canceled.')}"), status_code=302)
     return RedirectResponse(_front(f"integrations?connect_provider={quote(provider)}&code={quote(code)}&state={quote(state)}"),
                             status_code=302)
 
