@@ -1,15 +1,23 @@
 from datetime import datetime, timedelta, timezone
 import jwt
 from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
 from .config import settings
 
-password_hash = PasswordHash.recommended()
+# Argon2id with OWASP's recommended minimum (19 MiB, 2 iterations, 1 lane). pwdlib's default (64 MiB, 3, 4)
+# took about 1.5 s of CPU per sign-in on a 0.1-CPU instance (Render free). Older hashes still verify and
+# are upgraded to these parameters at the next successful sign-in (verify_and_rehash).
+password_hash = PasswordHash((Argon2Hasher(memory_cost=19_456, time_cost=2, parallelism=1),))
 
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
 def verify_password(password: str, hashed: str) -> bool:
     return password_hash.verify(password, hashed)
+
+def verify_and_rehash(password: str, hashed: str) -> tuple[bool, str | None]:
+    """(valid, new hash when the stored one uses older parameters)."""
+    return password_hash.verify_and_update(password, hashed)
 
 def create_access_token(subject: str) -> str:
     if len(settings.jwt_secret) < 32:

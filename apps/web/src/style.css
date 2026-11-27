@@ -889,3 +889,6 @@ input[type=range] { accent-color: var(--lime); padding: 0; background: none; bor
 }
 @media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
 .app-version { color: var(--faint); font-size: 11px; text-align: center; }
+.msg-error { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 6px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid rgba(255, 107, 107, .45); background: rgba(255, 107, 107, .08); color: #FFD0D0; font-size: var(--step--1); }
+.msg-error b { color: var(--danger); }

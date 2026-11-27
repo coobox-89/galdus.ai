@@ -1,11 +1,13 @@
 name: Uptime check
 
-# Minimal, free monitoring: every 30 minutes the API readiness endpoint is checked (database and
-# migrations included). After a failure an issue labelled "incident" is opened (GitHub notifies the
+# Minimal, free monitoring: every 10 minutes the API readiness endpoint is checked (database and
+# migrations included). It also keeps a free Render instance awake (it sleeps after 15 idle minutes,
+# and the next sign-in then waits 30-60 s for a cold start); one always-on service fits in Render's
+# 750 free hours a month. GitHub may delay scheduled runs at busy times. After a failure an issue labelled "incident" is opened (GitHub notifies the
 # repository owner); it is closed automatically when the API answers again.
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:

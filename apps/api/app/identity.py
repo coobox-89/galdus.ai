@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from .auth import create_access_token, decode_access_claims, hash_password, verify_password
+from .auth import create_access_token, decode_access_claims, hash_password, verify_and_rehash, verify_password
 from .config import settings
 from .db import get_db
 from .models import Membership, Organization, User
@@ -218,9 +218,13 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         verify_password(body.password, _DUMMY_HASH)
         await login_failures.fail(email)
         raise _unauthorized("Invalid email or password")
-    if not verify_password(body.password, user.password_hash):
+    valid, upgraded = verify_and_rehash(body.password, user.password_hash)
+    if not valid:
         await login_failures.fail(email)
         raise _unauthorized("Invalid email or password")
+    if upgraded:
+        user.password_hash = upgraded
+        await db.commit()
     from .mailer import email_enabled
     if settings.require_email_verification and email_enabled() and user.email_verified_at is None:
         raise HTTPException(status_code=403, detail="Verify your email address first: open the link we sent you, or ask for a new one.")

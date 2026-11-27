@@ -92,14 +92,14 @@ Docker Compose: `docker compose exec db pg_dump -U galdus -Fc galdus > galdus-$(
 
 | Signal | Where | Alert |
 |:--|:--|:--|
-| Uptime and readiness | `.github/workflows/uptime.yml` checks `/readyz` every 30 minutes | Opens an issue labelled `incident` (GitHub notifies you) and closes it when the API is back. Make sure **Watch** is on for the repository and GitHub notifications reach your email or phone. |
+| Uptime and readiness | `.github/workflows/uptime.yml` checks `/readyz` every 10 minutes (which also keeps the free instance awake) | Opens an issue labelled `incident` (GitHub notifies you) and closes it when the API is back. Make sure **Watch** is on for the repository and GitHub notifications reach your email or phone. |
 | Errors | Render **Logs**: JSON lines; filter `"level":"error"` or `"status":5` | Optional: a free log drain or Render notifications for failed deploys (**Settings, Notifications**). |
 | Request tracing | Every response has `X-Request-ID`; error bodies include `request_id` | Ask users for it and search the logs. |
 | Scheduler | **Actions, Automation scheduler** runs | GitHub emails you when a scheduled workflow fails. |
 | Database | Supabase **Reports** (size, connections) and **Advisors** | Check monthly; act before 400 MB on the free plan. |
 | Dependencies | CI `pip-audit` and `npm audit` on every pull request; Dependabot alerts in **Security** | Fix high and critical within 7 days. |
 
-Optional, also free: an external uptime service (for example UptimeRobot) on `/health` every 5 minutes. Note that frequent pings keep a free Render instance awake for the whole month, which uses most of its 750 free hours.
+Optional, also free: an external uptime service (for example UptimeRobot) on `/health` every 5 minutes, which keeps the instance awake even when GitHub delays its schedules. One always-awake free service uses about 744 of Render's 750 free hours a month: do not run a second free service in the same Render workspace.
 
 ## Incidents
 

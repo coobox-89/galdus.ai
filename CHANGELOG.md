@@ -36,6 +36,10 @@ Release candidate after the production-readiness review ([security review](docs/
 - Small print (`--faint`) is slightly lighter for WCAG AA contrast (5.1:1).
 - Checkboxes drawn in the platform style (Blue Night box, lime check, lime focus ring) instead of the operating system's native look; native rendering is kept only in Windows high-contrast mode.
 - Backups kept for about 30 days (4 weekly copies), matching the privacy policy's promise on deleted accounts.
+- Platform models are offered only when the server holds their credentials: with `ALLOWED_MODELS` set and `OPENAI_API_KEY` empty, the chat no longer shows an "OpenAI" model that cannot answer, and shows "Connect a model" instead.
+- Chat errors are shown inside the reply ("No answer" with the reason and a shortcut to Models), not only as a toast.
+- Faster sign-in on small instances: Argon2id with OWASP's minimum parameters (19 MiB, 2 iterations, 1 lane), about six times less CPU; older hashes are upgraded at the next sign-in.
+- The uptime check runs every 10 minutes, which also keeps the free Render instance awake.
 - Deleting an account now signs out to the sign-in page with a confirmation.
 
 ### Fixed

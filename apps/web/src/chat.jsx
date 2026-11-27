@@ -117,11 +117,11 @@ export function ChatPage({ go }) {
       for await (const ev of readSSE(res)) {
         if (ev.type === 'meta') { update({ model: ev.model, sources: ev.sources }); setActive(a => ({ ...a, title: ev.title })); }
         if (ev.type === 'delta') update(m => ({ content: m.content + ev.text }));
-        if (ev.type === 'error') { ws.toast(ev.message, 'error'); update(m => ({ error: true, content: m.content || '' })); }
+        if (ev.type === 'error') { ws.toast(ev.message, 'error'); update(m => ({ error: ev.message, content: m.content || '' })); }
         if (ev.type === 'done') update({ streaming: false, tokens: ev.tokens });
       }
     } catch (err) {
-      if (err.name !== 'AbortError') ws.onError(err);
+      if (err.name !== 'AbortError') { ws.onError(err); update({ error: err.message }); }
     } finally {
       update({ streaming: false }); setStreaming(false); loadConvs();
     }
@@ -204,6 +204,9 @@ export function ChatPage({ go }) {
                 {m.role === 'user' ? <div className="body">{m.content}</div> : (
                   <div className="body">
                     {m.streaming && !m.content ? <Pixels label="Thinking" /> : <><Md>{m.content}</Md>{m.streaming && <span className="caret" />}</>}
+                    {m.error && !m.streaming && (
+                      <div className="msg-error" role="alert"><b>No answer.</b> {m.error}
+                        {/model|provider|key/i.test(m.error) && <button type="button" className="btn ghost sm" onClick={() => go('models')}>Open Models</button>}</div>)}
                   </div>)}
                 {m.role === 'assistant' && m.sources?.length > 0 && !m.streaming && (
                   <div className="src-chips">{m.sources.map((s, i) => <span key={i} className="chip ok" title={s.excerpt}><BookOpen size={11} /> [{i + 1}] {s.title}</span>)}</div>)}

@@ -26,19 +26,28 @@ def resolve_model(requested: str | None) -> str:
     return model
 
 
-def provider_kwargs(model: str) -> dict:
-    kwargs: dict = {}
+NO_PLATFORM_MODEL = ("No model is connected yet. Open Models and connect a provider with your own key "
+                     "(the server has no platform key for this model).")
+
+
+def platform_credentials(model: str) -> dict | None:
+    """LiteLLM arguments for a platform model, or None when the server has no credentials for it."""
     if model.startswith("ollama/") or model.startswith("ollama_chat/"):
-        if settings.ollama_api_base:
-            kwargs["api_base"] = settings.ollama_api_base
-        return kwargs
-    if settings.openai_api_key and (model.startswith("openai/") or "/" not in model):
-        kwargs["api_key"] = settings.openai_api_key
-        return kwargs
-    # Other providers: LiteLLM reads their standard env vars (ANTHROPIC_API_KEY, ...).
-    env = litellm.validate_environment(model=model)
-    if not env.get("keys_in_environment"):
-        raise HTTPException(status_code=503, detail="The model provider is not configured on this server")
+        return {"api_base": settings.ollama_api_base} if settings.ollama_api_base else None
+    if model.startswith("openai/") or "/" not in model:
+        return {"api_key": settings.openai_api_key} if settings.openai_api_key else None
+    # Other providers: LiteLLM reads their standard variables (ANTHROPIC_API_KEY, GEMINI_API_KEY, ...).
+    try:
+        env = litellm.validate_environment(model=model)
+    except Exception:  # pragma: no cover - unknown provider prefix
+        return None
+    return {} if env.get("keys_in_environment") else None
+
+
+def provider_kwargs(model: str) -> dict:
+    kwargs = platform_credentials(model)
+    if kwargs is None:
+        raise HTTPException(status_code=503, detail=NO_PLATFORM_MODEL)
     return kwargs
 
 
@@ -54,12 +63,19 @@ async def tokens_used_today(db: AsyncSession, user_id) -> int:
 @router.get("/models", response_model=ModelsResponse)
 async def list_models(membership: Membership = Depends(current_membership)):
     """Platform-provided models (may be empty when the platform is BYOK-only)."""
-    models = settings.allowed_model_list if platform_models_enabled() else []
-    return ModelsResponse(default=settings.litellm_model if models else "", models=models)
+    models = usable_platform_models()
+    default = settings.litellm_model if settings.litellm_model in models else (models[0] if models else "")
+    return ModelsResponse(default=default, models=models)
 
 
 def platform_models_enabled() -> bool:
-    return bool(settings.openai_api_key or _split(settings.allowed_models))
+    """Offer platform models only when the server can actually call them: listing a model without its key
+    makes every chat fail (for example ALLOWED_MODELS set and OPENAI_API_KEY empty)."""
+    return bool(usable_platform_models())
+
+
+def usable_platform_models() -> list[str]:
+    return [m for m in settings.allowed_model_list if platform_credentials(m) is not None]
 
 
 def _split(v: str) -> list[str]:
