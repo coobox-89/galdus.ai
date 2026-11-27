@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'motion/react';
 import { useWs } from './workspace';
-import { BookOpen, Bot, Coins, Cpu, MessageSquare } from 'lucide-react';
+import { BookOpen, Bot, Coins, Cpu, MessageSquare, Plug } from 'lucide-react';
+import { Mark } from './brand';
+import vikingPhone from './assets/hero/viking-phone.webp';
 import { CountUp, fmt, rise, stagger, Status, when } from './ui';
 
 export function HomePage({ go }) {
@@ -24,10 +26,19 @@ export function HomePage({ go }) {
 
   return (
     <div className="stack" style={{ gap: 28 }}>
-      <div className="welcome">
-        <motion.h1 className="grad-text" initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}>Good to see you{first ? `, ${first}` : ''}.</motion.h1>
-        <p className="muted" style={{ margin: '8px 0 0' }}>Here is where {s?.name || 'your workspace'} stands today.</p>
-      </div>
+      <section className="home-hero" aria-labelledby="home-greeting">
+        <div className="welcome">
+          <motion.h1 id="home-greeting" className="grad-text" initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}>
+            Good to see you{first ? <>, <span className="hello-name">{first}</span></> : ''}.</motion.h1>
+          <p className="welcome-sub">Here is where {s?.name || 'your workspace'} stands today.</p>
+          <p className="welcome-lede">Galdus is your team's AI workspace. Chat with any model, give it your company knowledge and let agents do the repetitive work.</p>
+          <div className="welcome-cta">
+            <button type="button" className="btn" onClick={() => go('chat')}><MessageSquare size={15} /> Start a chat</button>
+            <button type="button" className="btn ghost" onClick={() => go('models')}><Plug size={15} /> Connect a model</button>
+          </div>
+        </div>
+        <VikingScene />
+      </section>
 
       <section>
         <div className="panel-head"><div><h3>Set up your workspace</h3><p>Four steps from zero to a running AI workflow.</p></div></div>
@@ -62,5 +73,52 @@ export function HomePage({ go }) {
             </tbody></table></div>)}
       </section>
     </div>
+  );
+}
+
+// The chat is reproduced exactly as written in the brief. Do not edit the copy.
+const SCENE_CHAT = [
+  ['viking', 'Salute! Domani conquisto il villaggio vicino. Ho bisogno di armi.'],
+  ['galdus', 'Ottimo. Ho trovato tutto online, con spedizione gratuita. Procedo🛒'],
+  ['galdus', 'Ordine effettuato! Consegna prevista tra 3-5 giorni lavorativi. 📦'],
+  ['viking', 'Ma io attacco domani!'],
+  ['galdus', "L'importante è partecipare."],
+];
+
+function VikingScene() {
+  const reduce = useReducedMotion();
+  const ref = useRef(null);
+  const inView = useInView(ref, { amount: .3 });
+  const [shown, setShown] = useState(reduce ? SCENE_CHAT.length : 0);
+  useEffect(() => {
+    if (reduce) { setShown(SCENE_CHAT.length); return undefined; }
+    if (!inView) return undefined;
+    // Plays the conversation, holds on the punchline, then starts again.
+    const t = setTimeout(() => setShown(n => (n >= SCENE_CHAT.length ? 0 : n + 1)),
+      shown === 0 ? 700 : shown >= SCENE_CHAT.length ? 6000 : 1500);
+    return () => clearTimeout(t);
+  }, [shown, inView, reduce]);
+  return (
+    <figure className="scene" ref={ref}>
+      <span className="scene-glow" aria-hidden="true" />
+      <img className="scene-viking" src={vikingPhone} alt="A smiling Viking with the Galdus lime warpaint, chatting with Galdus on his phone"
+        width="393" height="532" loading="lazy" decoding="async" />
+      <div className="scene-bubble" aria-hidden="true">
+        <div className="scene-head"><Mark size={16} interactive={false} /><b>Galdus</b><span className="scene-live"><i />online</span></div>
+        <ol className={`scene-chat ${reduce ? 'static' : ''}`}>
+          <AnimatePresence initial={false}>
+            {SCENE_CHAT.slice(0, shown).map(([who, text], i) => (
+              <motion.li key={i} layout={!reduce} className={`sbub ${who}`}
+                initial={reduce ? false : { opacity: 0, y: 10, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, transition: { duration: .2 } }}
+                transition={{ duration: .3, ease: [.2, .7, .2, 1] }}>
+                <b className="sbub-who">{who === 'viking' ? 'Vichingo' : 'Galdus'}:</b> {text}
+              </motion.li>))}
+          </AnimatePresence>
+        </ol>
+      </div>
+      <figcaption className="sr-only">
+        <ol>{SCENE_CHAT.map(([who, text], i) => <li key={i}>{who === 'viking' ? 'Vichingo' : 'Galdus'}: {text}</li>)}</ol>
+      </figcaption>
+    </figure>
   );
 }
