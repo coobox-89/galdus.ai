@@ -26,3 +26,12 @@ th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #222a36;white-sp
 .ok{color:#7be0a0!important}.grid-form{grid-template-columns:repeat(2,1fr)}.grid-form .row{grid-column:1/-1}
 @media(max-width:700px){.grid-form{grid-template-columns:1fr}}
 .workspace-head select{min-width:200px}
+.end{align-self:end}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}.upload{display:grid;align-content:start;gap:8px}
+.hits{display:grid;gap:8px;padding-left:20px}.hits small,.sources small{color:#9ba8ba}
+.run{margin-top:16px;border:1px solid #303846;border-radius:10px;padding:14px;background:#0d1118}.run.failed{border-color:#6b2a2a}.run small{color:#7e91a8}
+.run pre{margin:8px 0 0;padding:0;background:none;font:inherit;line-height:1.6}.sources{margin-top:10px}.sources summary{cursor:pointer;color:#56c5d5}
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:8px}
+.app-card{justify-self:stretch;text-align:left;display:grid;gap:6px;background:#0d1118;color:#eef2f8;border:1px solid #303846;font-weight:400;padding:14px}
+.app-card b{font-weight:800}.app-card small{color:#9ba8ba;line-height:1.5}.app-card.active{border-color:#56c5d5;box-shadow:0 0 0 1px #56c5d5}
+.clickable{cursor:pointer}.clickable:hover{background:#151b25}.tabs{flex-wrap:wrap}
+@media(max-width:700px){.two{grid-template-columns:1fr}}

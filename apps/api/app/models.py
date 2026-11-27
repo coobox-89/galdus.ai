@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint, false
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import Boolean, Computed, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, false
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
@@ -64,3 +66,81 @@ class ProviderConnection(Base):
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+def _org_fk():
+    return mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+
+
+class KnowledgeCollection(Base):
+    __tablename__ = "knowledge_collections"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = _org_fk()
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(500), default="")
+    # Optional semantic search: embeddings through a BYOK connection. Without it, full-text search is used.
+    connection_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("provider_connections.id", ondelete="SET NULL"), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class KnowledgeDocument(Base):
+    __tablename__ = "knowledge_documents"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = _org_fk()
+    collection_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("knowledge_collections.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    source_type: Mapped[str] = mapped_column(String(20))
+    chars: Mapped[int] = mapped_column(Integer, default=0)
+    chunks: Mapped[int] = mapped_column(Integer, default=0)
+    embedded: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+    __table_args__ = (Index("ix_knowledge_chunks_tsv", "tsv", postgresql_using="gin"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = _org_fk()
+    collection_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("knowledge_collections.id", ondelete="CASCADE"), index=True)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("knowledge_documents.id", ondelete="CASCADE"), index=True)
+    ordinal: Mapped[int] = mapped_column(Integer)
+    content: Mapped[str] = mapped_column(Text)
+    embedding = mapped_column(Vector(), nullable=True)
+    tsv = mapped_column(TSVECTOR, Computed("to_tsvector('simple', content)", persisted=True))
+
+
+class Agent(Base):
+    __tablename__ = "agents"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = _org_fk()
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(500), default="")
+    instructions: Mapped[str] = mapped_column(Text)
+    connection_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("provider_connections.id", ondelete="SET NULL"), nullable=True)
+    model: Mapped[str] = mapped_column(String(200))
+    collection_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("knowledge_collections.id", ondelete="SET NULL"), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class Run(Base):
+    """One execution of an agent or a built-in app, with its result and sources."""
+    __tablename__ = "runs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = _org_fk()
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    app_id: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    trigger: Mapped[str] = mapped_column(String(20), default="manual")
+    status: Mapped[str] = mapped_column(String(20))
+    input: Mapped[str] = mapped_column(Text)
+    output: Mapped[str] = mapped_column(Text, default="")
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    model: Mapped[str] = mapped_column(String(200), default="")
+    sources: Mapped[list] = mapped_column(JSONB, default=list)
+    prompt_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    completion_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)

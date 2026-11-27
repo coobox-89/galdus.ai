@@ -5,6 +5,9 @@ import { AcceptableUse, Privacy, Terms } from './legal';
 import { AdminConsole } from './admin';
 import { ModelPicker, useModelSources } from './modelpicker';
 import { ModelsTab } from './models';
+import { KnowledgeTab, useCollections } from './knowledge';
+import { AgentsTab } from './agents';
+import { AppsTab } from './apps';
 import { currentRoute, href } from './paths';
 import './style.css';
 
@@ -137,7 +140,7 @@ function ChatTab({ token, organizationId, sources, onError }) {
   );
 }
 
-const TABS = [['chat', 'Chat'], ['models', 'Models']];
+const TABS = [['chat', 'Chat'], ['apps', 'Apps'], ['agents', 'Agents'], ['knowledge', 'Knowledge'], ['models', 'Models']];
 
 function Workspace({ token, user, onExpired, onLogout }) {
   const [organizations, setOrganizations] = useState([]);
@@ -160,7 +163,10 @@ function Workspace({ token, user, onExpired, onLogout }) {
   }, [token, handle]);
 
   const sources = useModelSources(token, organizationId, handle, refreshKey);
+  const collections = useCollections(token, organizationId, handle, refreshKey);
+  const changed = () => setRefreshKey(k => k + 1);
   const role = organizations.find(o => o.id === organizationId)?.role;
+  const common = { token, organizationId, role, sources, collections, onError: handle };
   const tabs = user?.is_platform_admin ? [...TABS, ['admin', 'Admin console']] : TABS;
 
   return (
@@ -184,6 +190,9 @@ function Workspace({ token, user, onExpired, onLogout }) {
         ))}
       </div>
       {view === 'chat' && <ChatTab key={organizationId} token={token} organizationId={organizationId} sources={sources} onError={handle} />}
+      {view === 'apps' && <AppsTab key={organizationId} {...common} />}
+      {view === 'agents' && <AgentsTab key={organizationId} {...common} />}
+      {view === 'knowledge' && <KnowledgeTab key={organizationId} {...common} onChanged={changed} />}
       {view === 'models' && <ModelsTab token={token} organizationId={organizationId} role={role} sources={sources}
         onChanged={() => setRefreshKey(k => k + 1)} onError={handle} />}
       {view === 'admin' && user?.is_platform_admin && <AdminConsole token={token} currentUserId={user.id} onError={handle} />}

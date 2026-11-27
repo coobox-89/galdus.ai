@@ -7,6 +7,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .admin import router as admin_router
+from .agents import router as agents_router
+from .knowledge import router as knowledge_router
 from .chat import router as chat_router
 from .connections import router as models_router
 from .config import settings
@@ -29,7 +31,8 @@ app = FastAPI(
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     length = request.headers.get("content-length")
-    if length and length.isdigit() and int(length) > settings.max_request_bytes:
+    limit = 6_000_000 if request.url.path.endswith("/documents/upload") else settings.max_request_bytes
+    if length and length.isdigit() and int(length) > limit:
         return JSONResponse(status_code=413, content={"detail": "Request body too large"})
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -57,6 +60,8 @@ app.include_router(identity_router)
 app.include_router(chat_router)
 app.include_router(admin_router)
 app.include_router(models_router)
+app.include_router(knowledge_router)
+app.include_router(agents_router)
 
 
 @app.get("/health")
