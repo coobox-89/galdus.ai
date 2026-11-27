@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BASE } from './paths';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { PageHead, when } from './ui';
 
 export function TeamPage() {
@@ -56,8 +57,8 @@ export function TeamPage() {
           <tbody>{members.map(m => (
             <tr key={m.user_id}><td>{m.full_name}</td><td>{m.email}</td>
               <td>{ws.isOwner && m.user_id !== ws.user.id ? (
-                <select value={m.role} onChange={e => setRole(m, e.target.value)} style={{ padding: '6px 10px', width: 'auto' }}>
-                  <option value="owner">owner</option><option value="admin">admin</option><option value="member">member</option></select>) : <span className="chip">{m.role}</span>}</td>
+                <Select compact value={m.role} onChange={v => setRole(m, v)} aria-label={`Role of ${m.full_name || m.email}`}
+                  options={[{ value: 'owner', label: 'Owner' }, { value: 'admin', label: 'Admin' }, { value: 'member', label: 'Member' }]} />) : <span className="chip">{m.role}</span>}</td>
               <td>{when(m.joined_at)}</td>
               <td>{(ws.canManage || m.user_id === ws.user.id) && <button type="button" className="btn quiet sm" onClick={() => removeMember(m)}>{m.user_id === ws.user.id ? 'Leave' : 'Remove'}</button>}</td></tr>))}
           </tbody></table></div>
@@ -68,7 +69,7 @@ export function TeamPage() {
           <h3>Invite a teammate</h3>
           <form className="actions" onSubmit={send}>
             <input type="email" value={invite.email} onChange={e => setInvite({ ...invite, email: e.target.value })} placeholder="name@company.com" required style={{ flex: 1, minWidth: 220 }} />
-            <select value={invite.role} onChange={e => setInvite({ ...invite, role: e.target.value })} style={{ width: 'auto' }}><option value="member">member</option><option value="admin">admin</option></select>
+            <Select value={invite.role} onChange={v => setInvite({ ...invite, role: v })} aria-label="Role" options={[{ value: 'member', label: 'Member' }, { value: 'admin', label: 'Admin' }]} />
             <button className="btn">Create invitation</button>
           </form>
           {link && <div className="secret-box"><b>Send this link to your teammate</b><span className="small muted">It works once, for that email address, for 7 days. They sign up or sign in, then accept.</span>

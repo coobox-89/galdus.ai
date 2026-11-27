@@ -4,6 +4,8 @@ import { BookOpen, Check, Copy, FileText, Image as ImageIcon, Paperclip, Pin, Pl
 import { API_BASE_URL } from './config';
 import { useWs } from './workspace';
 import { Md, Pixels } from './ui';
+import { Select } from './select';
+import { ModelPicker } from './modelpicker';
 
 const STARTERS = {
   assistant: ['Summarise a text I paste', 'Plan my week with priorities', 'Explain a concept simply'],
@@ -47,9 +49,7 @@ export function ChatPage({ go }) {
   const abort = useRef(null);
   const endRef = useRef(null);
   const fileInput = useRef(null);
-  const { connections, providers } = ws.sources;
-  const conn = connections.find(c => c.id === settings.connection_id);
-  const suggestions = conn ? (providers.find(p => p.id === conn.provider)?.suggestions || []) : ws.sources.platform;
+  const { connections } = ws.sources;
 
   const loadConvs = useCallback(() => ws.call('/v1/conversations').then(setConvs).catch(ws.onError), [ws]);
   useEffect(() => { loadConvs(); ws.call('/v1/chat/personas').then(setPersonas).catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -144,7 +144,7 @@ export function ChatPage({ go }) {
   if (ws.sources.loaded && !connections.length && !ws.sources.platform.length) return (
     <div className="empty" style={{ marginTop: 40 }}><h3>Connect a model to start chatting</h3>
       <p>Galdus works with any provider. Add your API key once and every page can use it.</p>
-      <button type="button" className="btn" onClick={() => go('models')}>Connect a model</button></div>);
+      <button type="button" className="btn" onClick={async () => { const r = await ws.connectModel(); if (r) setSettings(st => ({ ...st, connection_id: r.connectionId, model: r.model })); }}>Connect a model</button></div>);
 
   return (
     <div className="chat2">
@@ -172,18 +172,13 @@ export function ChatPage({ go }) {
       <section className="chat-main">
         <div className="chat-bar">
           <label className="field">Assistant
-            <select value={settings.persona} onChange={e => change({ persona: e.target.value })}>{personas.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-          <label className="field">Provider
-            <select value={settings.connection_id} onChange={e => { const c = connections.find(x => x.id === e.target.value); change({ connection_id: e.target.value, model: c?.default_model || ws.sources.platform[0] || '' }); }}>
-              {connections.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-              {ws.sources.platform.length > 0 && <option value="">Galdus platform models</option>}
-            </select></label>
-          <label className="field">Model
-            <input list="chat-models" value={settings.model} onChange={e => setSettings({ ...settings, model: e.target.value })} onBlur={() => persist(settings).catch(ws.onError)} maxLength={200} placeholder="Any model name" />
-            <datalist id="chat-models">{suggestions.map(s => <option key={s} value={s} />)}</datalist></label>
+            <Select value={settings.persona} onChange={v => change({ persona: v })} compact
+              options={personas.map(p => ({ value: p.id, label: p.name, hint: p.description.split('. ')[0] }))} /></label>
+          <ModelPicker compact value={{ connectionId: settings.connection_id || '', model: settings.model }}
+            onChange={v => change({ connection_id: v.connectionId, model: v.model })} />
           <label className="field">Knowledge
-            <select value={settings.collection_id} onChange={e => change({ collection_id: e.target.value })}>
-              <option value="">Off</option>{ws.collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+            <Select value={settings.collection_id || ''} onChange={v => change({ collection_id: v })} compact
+              options={[{ value: '', label: 'Off', hint: 'Answer from the model only' }, ...ws.collections.map(c => ({ value: c.id, label: c.name, hint: `${c.documents} document${c.documents === 1 ? '' : 's'}` }))]} /></label>
         </div>
 
         <div className="thread" aria-live="polite">

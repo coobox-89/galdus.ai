@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from './config';
 import { RunView } from './runview';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { Empty, PageHead, Status, when } from './ui';
 
 const PRESETS = [['Every weekday at 08:00 UTC', '0 8 * * 1-5'], ['Every day at 07:00 UTC', '0 7 * * *'], ['Every Monday at 09:00 UTC', '0 9 * * 1'], ['Every hour', '0 * * * *'], ['Custom', 'custom']];
@@ -55,12 +56,12 @@ export function AutomationsPage({ go }) {
           <h2>New automation</h2>
           <div className="form-grid">
             <label className="field">Name<input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required maxLength={120} placeholder="Monday service report" /></label>
-            <label className="field">Agent<select value={form.agent_id} onChange={e => setForm({ ...form, agent_id: e.target.value })}>{agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+            <label className="field">Agent<Select value={form.agent_id} onChange={v => setForm({ ...form, agent_id: v })} options={agents.map(a => ({ value: a.id, label: a.name }))} /></label>
             <label className="field span">Request for the agent<textarea value={form.input} onChange={e => setForm({ ...form, input: e.target.value })} required maxLength={20000} placeholder="Summarise last week's incidents and list open risks." /></label>
           </div>
           <label className="check"><input type="checkbox" checked={form.schedule} onChange={e => setForm({ ...form, schedule: e.target.checked })} /><span>Run on a schedule</span></label>
           {form.schedule && <div className="form-grid">
-            <label className="field">When<select value={form.preset} onChange={e => setForm({ ...form, preset: e.target.value })}>{PRESETS.map(([l, v]) => <option key={v} value={v}>{l}</option>)}</select></label>
+            <label className="field">When<Select value={form.preset} onChange={v => setForm({ ...form, preset: v })} options={PRESETS.map(([l, v]) => ({ value: v, label: l }))} /></label>
             {form.preset === 'custom' && <label className="field">Cron expression<small>Five fields, UTC, at most every 15 minutes.</small><input value={form.cron} onChange={e => setForm({ ...form, cron: e.target.value })} placeholder="30 6 * * 1-5" required /></label>}
           </div>}
           <label className="check"><input type="checkbox" checked={form.webhook} onChange={e => setForm({ ...form, webhook: e.target.checked })} />

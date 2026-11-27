@@ -6,7 +6,7 @@
 > **Default branch:** `main`  
 > **Product tagline:** “The Open AI Operating System.”  
 > **License:** AGPL-3.0-only  
-> **Status:** 0.6.1 public early-access preview (GitHub Pages + Render free + Supabase free). Not yet hardened for a broad launch; see `docs/security/overview.md`.
+> **Status:** 0.7.0 public early-access preview (GitHub Pages + Render free + Supabase free). Not yet hardened for a broad launch; see `docs/security/overview.md`.
 
 ## 1. Instructions for the receiving agent
 

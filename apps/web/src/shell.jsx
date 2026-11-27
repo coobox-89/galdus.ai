@@ -3,6 +3,7 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { Bot, BookOpen, Cpu, LayoutDashboard, LayoutGrid, LogOut, Menu, MessageSquare, Plug, Search, ShieldCheck, UserCog, Users, Workflow } from 'lucide-react';
 import { Aurora, Mark, Wordmark } from './brand';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { HomePage } from './home';
 import { ChatPage } from './chat';
 import { AppsPage } from './apps';
@@ -78,9 +79,8 @@ export function Shell({ onLogout }) {
         <div className="brand-row" onClick={() => navigate('home')}><Mark size={30} /><Wordmark /></div>
         <label className="ws-switch">
           <span className="sr-only">Workspace</span>
-          <select value={ws.organizationId} onChange={e => ws.setOrganizationId(e.target.value)} disabled={ws.organizations.length < 2}>
-            {ws.organizations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-          </select>
+          <Select value={ws.organizationId} onChange={ws.setOrganizationId} disabled={ws.organizations.length < 2} aria-label="Workspace"
+            options={ws.organizations.map(o => ({ value: o.id, label: o.name, hint: o.role }))} />
         </label>
         <LayoutGroup id="nav">
           <nav className="nav">

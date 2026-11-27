@@ -27,7 +27,7 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="Galdus.ai API",
-    version="0.6.1",
+    version="0.7.0",
     docs_url="/docs" if settings.docs_enabled else None,
     redoc_url="/redoc" if settings.docs_enabled else None,
     openapi_url="/openapi.json" if settings.docs_enabled else None,

@@ -2,6 +2,14 @@
 
 # Changelog
 
+## 0.7.0 (2026-11-27)
+
+- Branded dropdowns everywhere: every select in the console (assistant, model, knowledge, workspace, roles, agents, schedules) uses the Galdus design, with keyboard navigation, search on long lists and grouped options.
+- One model menu in chat, agents and apps lists every model of every provider in the catalog. Connected providers work at once; any other model opens the connect wizard.
+- Connect wizard: provider choice, illustrated steps to get the key with a link to the provider console, key check before saving with plain-language errors, and a ready screen that switches to the new model.
+- Models page redesigned as a provider gallery with free-tier and self-hosted tags.
+- API: `POST /api/v1/models/check` tests a key before it is stored.
+
 ## 0.6.1 (2026-11-27)
 
 - Sign-in footer redesigned: logo with gradient tagline, legal links as pills (two by two on phones), early-access badge and copyright.
