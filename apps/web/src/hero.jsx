@@ -6,19 +6,10 @@ import { BASE } from './paths';
 // aligned to the photo in percentages so they stay on the arm at every screen size.
 
 const W = 1672, H = 941;
-const ARM = [[670, 470], [750, 400], [890, 420], [930, 560], [920, 700], [1020, 680], [1160, 780], [1180, 840], [1070, 910], [920, 900], [800, 820], [710, 700], [670, 560]];
-const STRIPE = [[890, 40], [977, 40], [972, 262], [896, 256]];
-const pct = pts => pts.map(([x, y]) => `${(x / W * 100).toFixed(2)}% ${(y / H * 100).toFixed(2)}%`).join(', ');
+// Mesh nodes on the digital arm, in % of the arm box (traced from the artwork).
+const NODES = [[33.39, 68.45], [35.6, 40.82], [45.69, 84.85], [37.8, 81.11], [63.85, 84.31], [16.7, 20.14], [29.17, 69.7], [10.64, 32.44], [83.12, 83.78], [51.56, 84.85], [39.63, 72.19], [9.91, 25.85], [79.45, 85.2], [35.05, 79.14], [13.21, 26.02], [13.39, 25.85], [41.1, 83.6], [51.19, 87.52], [42.57, 76.11], [26.97, 21.03], [13.76, 22.82], [36.33, 73.98], [19.08, 59.18], [31.38, 72.55], [20.0, 63.81], [61.28, 66.31], [32.84, 77.01], [62.2, 64.71], [31.38, 38.86], [78.35, 87.7], [85.87, 81.46], [44.04, 73.26], [36.51, 42.6], [49.72, 82.89], [88.26, 78.97], [33.39, 72.91], [86.79, 83.42], [13.21, 35.29], [54.68, 86.99], [32.29, 21.57], [19.63, 19.96], [61.47, 76.83], [36.88, 62.03], [34.31, 70.77], [63.49, 62.75], [45.14, 66.31], [31.56, 58.65], [22.75, 59.0], [38.17, 75.04], [13.76, 56.86], [55.41, 89.84], [59.63, 83.78], [52.66, 66.13], [65.69, 75.04], [15.23, 36.54], [65.69, 75.4], [20.0, 70.59], [20.37, 65.6], [27.71, 40.11], [66.79, 78.25], [30.28, 75.58], [93.03, 77.72], [57.06, 68.98], [27.34, 18.72], [46.61, 82.0], [14.5, 68.27], [57.98, 91.09], [74.5, 87.52], [51.56, 82.89], [18.35, 72.91]];
 
 function seeded(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function inside([x, y], poly) {
-  let c = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [xi, yi] = poly[i], [xj, yj] = poly[j];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
-  }
-  return c;
-}
 
 function Snow({ reduce }) {
   const ref = useRef(null);
@@ -58,13 +49,10 @@ export function Backdrop() {
     return () => window.removeEventListener('pointermove', on);
   }, [mx, my, reduce]);
 
+  // Nodes of the mesh light up in place; a few motes drift a little, always inside the arm mask.
   const sparks = useMemo(() => {
-    const r = seeded(7), out = [];
-    while (out.length < 80) {
-      const p = [660 + r() * 530, 390 + r() * 530];
-      if (inside(p, ARM)) out.push({ x: p[0] / W * 100, y: p[1] / H * 100, s: 3 + Math.floor(r() * 3) * 2, d: r() * 5, t: 1.2 + r() * 2.4, dx: (r() - .5) * 40, dy: -10 - r() * 40, k: out.length });
-    }
-    return out;
+    const r = seeded(7);
+    return NODES.map(([x, y], k) => ({ x, y, k, s: 3 + Math.floor(r() * 3), d: r() * 6, t: 1.6 + r() * 2.2, dx: (r() - .5) * 14, dy: -4 - r() * 14 }));
   }, []);
   const src = n => `${BASE}/hero/plate-${n}.webp`;
 
@@ -77,15 +65,15 @@ export function Backdrop() {
         <motion.div className="plate-inner" animate={reduce ? undefined : { scale: [1, 1.025, 1] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}>
           <img src={src(1672)} srcSet={`${src(1000)} 1000w, ${src(1672)} 1672w, ${src(2508)} 2508w`} sizes="(max-width: 900px) 200vw, 110vw"
             alt="" fetchPriority="high" draggable="false" />
-          {!reduce && <>
-            <div className="arm-glow" style={{ clipPath: `polygon(${pct(ARM)})` }} />
-            <div className="arm-sweep" style={{ clipPath: `polygon(${pct(ARM)})` }} />
-            <div className="paint-sweep" style={{ clipPath: `polygon(${pct(STRIPE)})` }} />
-            {sparks.map(p => (
-              <motion.i key={p.k} className="spark" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s }}
-                initial={{ opacity: 0 }} animate={{ opacity: [0, 1, .9, 0], x: [0, 0, p.dx * .4, p.dx], y: [0, 0, p.dy * .4, p.dy], scale: [.4, 1.2, 1, .6] }}
-                transition={{ duration: p.t, delay: 1.8 + p.d, repeat: Infinity, repeatDelay: p.d * .6, ease: 'easeOut' }} />))}
-          </>}
+          {!reduce && (
+            <div className="arm-fx" style={{ '--am': `url(${BASE}/hero/arm-mask.png)`, '--plate': `url(${src(1672)})` }}>
+              <i className="arm-glow" /><i className="arm-sweep" /><i className="arm-pulse" />
+              {sparks.map(p => (
+                <motion.i key={p.k} className="spark" style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s }}
+                  initial={{ opacity: 0 }} animate={{ opacity: [0, 1, .85, 0], x: [0, 0, p.dx * .5, p.dx], y: [0, 0, p.dy * .5, p.dy], scale: [.5, 1.3, 1, .6] }}
+                  transition={{ duration: p.t, delay: 1.8 + p.d, repeat: Infinity, repeatDelay: p.d * .5, ease: 'easeOut' }} />))}
+            </div>
+          )}
         </motion.div>
       </motion.div>
       <motion.div className="hero-fog" style={fog} />
