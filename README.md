@@ -16,20 +16,23 @@ Galdus.ai is an independent, open-source, self-hostable AI platform for individu
 
 ## Architecture
 
-The initial implementation is a modular monolith: React + Vite web console, FastAPI backend, LiteLLM model gateway, and Docker Compose for local development. PostgreSQL/pgvector, identity, durable workflows, and the other domains remain planned work.
+The initial implementation is a modular monolith: React + Vite web console, FastAPI backend, LiteLLM model gateway, PostgreSQL, SQLAlchemy and Alembic migrations. The identity foundation includes user registration/login, password hashing, JWT access tokens, organizations and memberships. Agents, RAG, automation and full governance remain planned work.
 
 ## Quick start
 
 1. Copy `.env.example` to `.env`.
-2. Start Docker Compose: `docker compose up --build`.
-3. Open the web console at http://localhost:5173.
-4. API health check: http://localhost:8000/health and docs: http://localhost:8000/docs.
+2. Replace `POSTGRES_PASSWORD` with a strong random password and `JWT_SECRET` with at least 32 random characters.
+3. Start services: `docker compose up --build -d`.
+4. Apply database migrations: `docker compose exec api alembic -c alembic.ini upgrade head`.
+5. Open the web console at http://localhost:5173 and API docs at http://localhost:8000/docs.
+
+API identity endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `GET /api/v1/auth/organizations` (Bearer token required for the last two).
 
 Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
 
 ## Security warning
 
-This scaffold is for local development only. Do not expose it to the public internet as-is. Authentication, authorization, tenant isolation, rate limiting, secret management, audit logging, sandboxing, and hardened deployment controls must be implemented and tested before production use.
+This scaffold is for local development only. It is not production-ready: add and test rate limiting, email verification, password reset, refresh-token/session revocation, brute-force protection, tenant-scoped authorization on every resource, security headers, audit trails, backups, monitoring and hardened deployment before exposing it publicly. The initial bearer tokens are short-lived JWTs but are not yet revocable.
 
 ## License
 

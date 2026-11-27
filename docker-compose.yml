@@ -1,19 +1,45 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: galdus
+      POSTGRES_USER: galdus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U galdus -d galdus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   api:
     build: ./apps/api
     env_file: .env
     environment:
+      DATABASE_URL: postgresql+asyncpg://galdus:${POSTGRES_PASSWORD}@db:5432/galdus
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       LITELLM_MODEL: ${LITELLM_MODEL:-gpt-4o-mini}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     ports:
       - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
   web:
     build: ./apps/web
     ports:
       - "5173:5173"
     environment:
       VITE_API_BASE_URL: http://localhost:${API_PORT:-8000}
-    depends_on: [api]
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

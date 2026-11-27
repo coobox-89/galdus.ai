@@ -2,10 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from litellm import acompletion
 from .config import settings
+from .identity import router as identity_router
 from .schemas import ChatRequest, ChatResponse
 
-app = FastAPI(title="Galdus.ai API", version="0.1.0")
+app = FastAPI(title="Galdus.ai API", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=[x.strip() for x in settings.cors_origins.split(",")], allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Content-Type", "Authorization"])
+app.include_router(identity_router)
 
 @app.get("/health")
 async def health():
