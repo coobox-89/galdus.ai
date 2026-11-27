@@ -47,7 +47,7 @@ export function ModelsTab({ token, organizationId, role, sources, onChanged, onE
         <div className="cards">{sources.connections.map(c => (
           <div key={c.id} className="card">
             <b>{c.label}</b>
-            <small>{c.label !== c.provider_label ? `${c.provider_label} · ` : ''}{c.api_key_hint ? `key ${c.api_key_hint}` : 'no key'}{c.api_base ? ` · key ${c.api_key_hint}` : ''}{c.api_base ? ` · ${c.api_base}` : ''}</small>
+            <small>{c.label !== c.provider_label ? `${c.provider_label} · ` : ''}{c.api_key_hint ? `key ${c.api_key_hint}` : 'no key'}{c.api_base ? ` · ${c.api_base}` : ''}</small>
             <small>Default model: {c.default_model || '—'} · last used {when(c.last_used_at)}</small>
             <div className="row">
               <button type="button" className="secondary" onClick={() => test(c)}>Test</button>
