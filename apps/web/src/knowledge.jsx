@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { API_BASE_URL } from './config';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { Empty, PageHead, Pixels, plural, when } from './ui';
 
 export function KnowledgePage() {
@@ -58,10 +59,12 @@ export function KnowledgePage() {
         <label className="field">Name<input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required maxLength={120} placeholder="IT runbooks" /></label>
         <label className="field">Description<input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} maxLength={500} /></label>
         <label className="field">Search type<small>Semantic search understands meaning; it needs an embedding model.</small>
-          <select value={form.connection_id} onChange={e => setForm({ ...form, connection_id: e.target.value })}>
-            <option value="">Keyword search</option>
-            {ws.sources.connections.map(c => <option key={c.id} value={c.id}>Semantic, via {c.label}</option>)}
-          </select>
+          <Select value={form.connection_id} onChange={async v => {
+            if (v === '__wizard') { const r = await ws.connectModel(); if (r) setForm(f => ({ ...f, connection_id: r.connectionId })); return; }
+            setForm({ ...form, connection_id: v });
+          }} options={[{ value: '', label: 'Keyword search', hint: 'Works without a model' },
+            ...ws.sources.connections.map(c => ({ value: c.id, label: `Semantic, via ${c.label}`, hint: 'Finds meaning, not only words' })),
+            ...(ws.canManage ? [{ value: '__wizard', label: 'Connect a provider for semantic search…', tone: 'muted' }] : [])]} />
         </label>
         <label className="field">Embedding model<small>{form.connection_id ? 'For example text-embedding-3-small' : 'Not needed for keyword search'}</small>
           <input value={form.embedding_model} onChange={e => setForm({ ...form, embedding_model: e.target.value })} disabled={!form.connection_id} required={!!form.connection_id} maxLength={200} />

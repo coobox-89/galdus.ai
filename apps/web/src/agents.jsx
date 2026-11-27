@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ModelPicker } from './modelpicker';
 import { RunView } from './runview';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { Bot } from 'lucide-react';
 import { Empty, PageHead, Pixels, plural, Status, when } from './ui';
 
@@ -75,10 +76,8 @@ export function AgentsPage({ go }) {
         <div className="panel form">
           <h3>Knowledge</h3>
           <label className="field">Answer from this collection
-            <select value={editing.collection_id} onChange={e => setEditing({ ...editing, collection_id: e.target.value })}>
-              <option value="">No knowledge</option>
-              {ws.collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <Select value={editing.collection_id || ''} onChange={v => setEditing({ ...editing, collection_id: v })}
+              options={[{ value: '', label: 'No knowledge' }, ...ws.collections.map(c => ({ value: c.id, label: c.name, hint: `${c.documents} document${c.documents === 1 ? '' : 's'}` }))]} />
           </label>
         </div>
         <div className="panel form">

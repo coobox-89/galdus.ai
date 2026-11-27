@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Cloud, FileText, Folder, Search, X } from 'lucide-react';
 import { useWs } from './workspace';
+import { Select } from './select';
 import { Pixels } from './ui';
 
 // Cloud drives: connect Google Drive / Microsoft 365, browse, import into knowledge.
@@ -108,7 +109,7 @@ function Browser({ conn, onClose }) {
         <div className="actions" style={{ justifyContent: 'space-between' }}>
           {ws.collections.length ? (
             <label className="field" style={{ flex: 1, minWidth: 200 }}>Import into
-              <select value={collection} onChange={e => setCollection(e.target.value)}>{ws.collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+              <Select value={collection} onChange={setCollection} options={ws.collections.map(c => ({ value: c.id, label: c.name }))} /></label>
           ) : <span className="small muted">Create a knowledge collection first.</span>}
           <button type="button" className="btn" disabled={!count || !collection || busy} onClick={importNow}>{busy ? 'Importing…' : `Import ${count || ''} file${count === 1 ? '' : 's'}`}</button>
         </div>

@@ -2,15 +2,15 @@
 
 # Roadmap
 
-Galdus.ai 0.6.1 is a public early-access preview. This page separates what ships today from what is planned. Planned items are direction, not commitments.
+Galdus.ai 0.7 is a public early-access preview. This page separates what ships today from what is planned. Planned items are direction, not commitments.
 
-## Shipped in 0.6
+## Shipped in 0.7
 
 | Area | Available today |
 |:--|:--|
 | Identity | Email and password, Google and GitHub sign-in, password reset by email, workspaces, data export, account deletion |
 | Chat | Streaming answers, attachments and images, assistant personas, personal preferences, knowledge grounding with citations, pinned and searchable history |
-| Models | Bring your own key for twelve provider types, including any OpenAI-compatible endpoint, free model names, keys encrypted at rest |
+| Models | Bring your own key for twelve provider types, including any OpenAI-compatible endpoint; one menu with every model; a guided connect wizard that tests the key before saving; keys encrypted at rest |
 | Knowledge | Uploads, web pages, Google Drive, SharePoint and OneDrive; pgvector semantic search with keyword fallback; daily drive re-sync |
 | Agents and apps | Reusable agents with tools and knowledge; eight built-in apps; every run stored with its steps |
 | Automation | Cron schedules, inbound webhooks, delivery to Slack or Teams |

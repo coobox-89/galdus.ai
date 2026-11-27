@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
+import { AnimatePresence } from 'motion/react';
 import { useToast } from './ui';
+import { ConnectWizard } from './wizard';
 
 const Ctx = createContext(null);
 export const useWs = () => useContext(Ctx);
@@ -13,6 +15,7 @@ export function WorkspaceProvider({ token, user, onExpired, children }) {
   const [sources, setSources] = useState({ connections: [], platform: [], providers: [], loaded: false });
   const [collections, setCollections] = useState([]);
   const [version, setVersion] = useState(0);
+  const [wizard, setWizard] = useState(null);
 
   const onError = useCallback(err => {
     if (err?.status === 401) onExpired();
@@ -50,10 +53,19 @@ export function WorkspaceProvider({ token, user, onExpired, children }) {
       sources, collections, onError, toast,
       refresh: () => setVersion(v => v + 1), reloadOrganizations: loadOrgs,
       call: (path, opts = {}) => api(path, { token, organizationId, ...opts }),
+      // Opens the connect wizard; resolves to { connectionId, model } or null if cancelled.
+      connectModel: (provider = '', model = '') => new Promise(resolve => setWizard({ provider, model, resolve })),
     };
   }, [token, user, organizations, organizationId, sources, collections, onError, toast, loadOrgs]);
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      <AnimatePresence>
+        {wizard && <ConnectWizard key="wizard" ws={value} request={wizard} onClose={result => { wizard.resolve(result); setWizard(null); }} />}
+      </AnimatePresence>
+    </Ctx.Provider>
+  );
 }
 
 function localStorageGet(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } }

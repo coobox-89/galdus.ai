@@ -55,6 +55,13 @@ class TestRequest(BaseModel):
     model: str = Field(min_length=1, max_length=200)
 
 
+class KeyCheck(BaseModel):
+    provider: str = Field(max_length=40)
+    api_key: str | None = Field(default=None, max_length=1000)
+    api_base: str | None = Field(default=None, max_length=500)
+    model: str = Field(min_length=1, max_length=200)
+
+
 def to_out(c: ProviderConnection) -> ConnectionOut:
     return ConnectionOut(id=c.id, provider=c.provider, provider_label=PROVIDERS.get(c.provider, {}).get("label", c.provider),
                          label=c.label, api_key_hint=c.api_key_hint, api_base=c.api_base, default_model=c.default_model,
@@ -150,6 +157,35 @@ async def test_connection(connection_id: uuid.UUID, body: TestRequest, membershi
         return {"ok": False, "error": type(exc).__name__, "message": _safe_message(exc)}
     conn.last_used_at = datetime.now(timezone.utc)
     await db.commit()
+    return {"ok": True, "model": getattr(result, "model", None) or kwargs["model"],
+            "reply": (result.choices[0].message.content or "").strip()[:100]}
+
+
+@router.post("/check")
+async def check_key(body: KeyCheck, membership: Membership = Depends(current_membership)):
+    """Try a key before it is saved, so the connect wizard can tell the user what to fix."""
+    require_manager(membership)
+    enforce(f"model-test:{membership.user_id}", 10)
+    spec = PROVIDERS.get(body.provider)
+    if not spec:
+        raise HTTPException(status_code=400, detail="Unknown provider")
+    key = (body.api_key or "").strip() or None
+    if spec["key"] and not key:
+        raise HTTPException(status_code=400, detail="This provider requires an API key")
+    kwargs: dict = {"model": litellm_model(body.provider, body.model.strip())}
+    if key:
+        kwargs["api_key"] = key
+    elif body.provider == "openai_compatible":
+        kwargs["api_key"] = "not-needed"
+    if spec["base_url"]:
+        if not body.api_base:
+            raise HTTPException(status_code=400, detail="This provider requires a base URL")
+        kwargs["api_base"] = validate_base_url(body.api_base, settings.allow_private_model_endpoints)
+    try:
+        result = await litellm.acompletion(messages=[{"role": "user", "content": "Reply with the single word: ok"}],
+                                           max_tokens=5, timeout=30, num_retries=0, **kwargs)
+    except Exception as exc:
+        return {"ok": False, "error": type(exc).__name__, "message": _safe_message(exc)}
     return {"ok": True, "model": getattr(result, "model", None) or kwargs["model"],
             "reply": (result.choices[0].message.content or "").strip()[:100]}
 

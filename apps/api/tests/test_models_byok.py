@@ -133,3 +133,26 @@ def test_connection_test_reports_provider_error_without_key(client, monkeypatch)
     r = client.post(f"/api/v1/models/connections/{conn['id']}/test", headers=h, json={"model": "deepseek-chat"})
     assert r.json()["ok"] is False
     assert "abcdefghijkl" not in r.text
+
+
+@pytestmark_db
+def test_check_key_before_saving(client, monkeypatch):
+    calls = []
+
+    async def ok(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(model=kwargs["model"], choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))])
+    monkeypatch.setattr(connections_module.litellm, "acompletion", ok)
+    _, h = register(client)
+    r = client.post("/api/v1/models/check", headers=h, json={"provider": "groq", "api_key": "gsk_testkey1234567890", "model": "llama-3.3-70b-versatile"})
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert calls[-1]["model"] == "groq/llama-3.3-70b-versatile" and calls[-1]["api_key"] == "gsk_testkey1234567890"
+    assert client.get("/api/v1/models/connections", headers=h).json() == []
+
+    async def boom(**kwargs):
+        raise RuntimeError(f"AuthenticationError: bad key {kwargs['api_key']}")
+    monkeypatch.setattr(connections_module.litellm, "acompletion", boom)
+    bad = client.post("/api/v1/models/check", headers=h, json={"provider": "deepseek", "api_key": "sk-abcdefghijklmnop1234", "model": "deepseek-chat"})
+    assert bad.json()["ok"] is False and "abcdefghijkl" not in bad.text
+    missing = client.post("/api/v1/models/check", headers=h, json={"provider": "anthropic", "model": "claude-sonnet-4-5"})
+    assert missing.status_code == 400
