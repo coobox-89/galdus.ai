@@ -34,6 +34,8 @@ Release candidate after the production-readiness review ([security review](docs/
 - API dependencies pinned with `apps/api/requirements.lock`; both packages declare `AGPL-3.0-only`; Vite moved to development dependencies.
 - Interface copy in US English throughout ("Personalize", "organized", "neutralize", "canceled"); legal texts unchanged.
 - Small print (`--faint`) is slightly lighter for WCAG AA contrast (5.1:1).
+- Checkboxes drawn in the platform style (Blue Night box, lime check, lime focus ring) instead of the operating system's native look; native rendering is kept only in Windows high-contrast mode.
+- Backups kept for about 30 days (4 weekly copies), matching the privacy policy's promise on deleted accounts.
 - Deleting an account now signs out to the sign-in page with a confirmation.
 
 ### Fixed
