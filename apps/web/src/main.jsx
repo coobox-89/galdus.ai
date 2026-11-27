@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { API_BASE_URL } from './config';
 import './style.css';
@@ -24,6 +24,34 @@ function App() {
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (!token) return undefined;
+    let active = true;
+    async function restoreSession() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 401) {
+          sessionStorage.removeItem('galdus_token');
+          if (active) {
+            setToken('');
+            setUser(null);
+            setAuthMessage('Your session expired. Please sign in again.');
+          }
+          return;
+        }
+        if (!response.ok) throw new Error('Unable to verify your session.');
+        const data = await response.json();
+        if (active) setUser(data);
+      } catch (error) {
+        if (active) setAuthMessage(error.message || 'Unable to restore your session.');
+      }
+    }
+    restoreSession();
+    return () => { active = false; };
+  }, [token]);
+
   async function authenticate(event) {
     event.preventDefault();
     setAuthMessage('');
@@ -41,12 +69,12 @@ function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || 'Authentication failed');
       sessionStorage.setItem('galdus_token', data.access_token);
-      setToken(data.access_token);
       setUser(data.user);
+      setToken(data.access_token);
       setAuthMessage(registering ? 'Workspace created successfully.' : 'Signed in successfully.');
       setPassword('');
     } catch (error) {
-      setAuthMessage(error.message);
+      setAuthMessage(error.message || 'Authentication failed.');
     }
   }
 
@@ -62,10 +90,14 @@ function App() {
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
       });
       const data = await response.json();
+      if (response.status === 401) {
+        logout();
+        throw new Error('Your session expired. Please sign in again.');
+      }
       if (!response.ok) throw new Error(data.detail || 'Request failed');
       setAnswer(data.content || '');
     } catch (error) {
-      setAnswer(`Connection error: ${error.message}`);
+      setAnswer(`Connection error: ${error.message || 'Request failed'}`);
     } finally {
       setBusy(false);
     }
@@ -96,11 +128,11 @@ function App() {
         <h2>{token ? 'Your workspace' : mode === 'register' ? 'Create your workspace' : 'Welcome back'}</h2>
         {token ? (
           <>
-            <p>{user?.full_name ? `Signed in as ${user.full_name} (${user.email}).` : 'Your session is active in this browser session.'}</p>
+            <p>{user?.full_name ? `Signed in as ${user.full_name} (${user.email}).` : 'Verifying your session…'}</p>
             <button type="button" className="secondary" onClick={logout}>Sign out</button>
             <form onSubmit={sendPrompt}>
               <textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder="Ask Galdus.ai something…" required />
-              <button disabled={busy}>{busy ? 'Sending…' : 'Send prompt'}</button>
+              <button disabled={busy || !user}>{busy ? 'Sending…' : 'Send prompt'}</button>
             </form>
             {answer && <pre>{answer}</pre>}
           </>
