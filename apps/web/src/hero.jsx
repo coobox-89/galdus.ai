@@ -70,6 +70,7 @@ export function Backdrop() {
 
   return (
     <div className="hero-bg" aria-hidden="true">
+      <img className="plate-fill" src={src(1000)} alt="" draggable="false" />
       <motion.div className="plate" style={plate}
         initial={reduce ? false : { opacity: 0, scale: 1.12, filter: 'blur(14px) brightness(.6)' }}
         animate={{ opacity: 1, scale: 1.04, filter: 'blur(0px) brightness(1)' }} transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}>
