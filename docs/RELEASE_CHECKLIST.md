@@ -67,7 +67,7 @@ In ordine di priorità. Non incollare mai i valori in chat: vanno solo nei panne
 11. **Completa GitHub.** **Settings, General, Social preview, Edit, Upload** con `docs/assets/social-preview.png`. Nella pagina del repository, ingranaggio accanto ad **About**: descrizione, sito `https://coobox-89.github.io/galdus.ai/`, topic (ai, llm, self-hosted, fastapi, react). **Settings, Code security**: attiva **Private vulnerability reporting** e **Dependabot alerts**. In alto, **Watch, All activity** per ricevere gli avvisi `incident`.
 12. **Primo backup.** Dal tuo computer: `DATABASE_URL=... BACKUP_PASSPHRASE=... ./scripts/backup-db.sh ~/galdus-backups` ([OPERATIONS.md](OPERATIONS.md#backups)); salva la passphrase nel password manager.
 14. **Materiali grafici.** Fornisci il simbolo ufficiale di Together AI (SVG dal suo brand kit, da mettere in `apps/web/public/brand/providers/together_ai.svg`) e l'immagine del vichingo ad alta risoluzione (almeno 2500 px di larghezza, sorgente senza compressione) per sostituire le versioni attuali.
-15. **Tagga la release candidate** dopo il passo 7: `git tag v1.0.0-rc.1 && git push origin v1.0.0-rc.1`. Dopo una settimana senza problemi, porta la versione a `1.0.0` e tagga `v1.0.0`.
+15. **Pubblica la release candidate**, dopo il merge di questa modifica: GitHub, **Actions**, workflow **Release**, **Run workflow** sul branch `main`. Crea il tag `v1.0.0-rc.1` e la pagina Release (pre-release) con le note del CHANGELOG; non fa deploy né riavvii. Dopo una settimana senza problemi: PR che porta la versione a `1.0.0`, merge, poi di nuovo **Run workflow** per `v1.0.0`.
 
 Facoltativo: `RATE_LIMIT_BACKEND=postgres` su Render per non azzerare i blocchi a ogni riavvio.
 

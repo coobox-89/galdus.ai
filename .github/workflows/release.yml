@@ -1,10 +1,15 @@
 name: Release
 
-# Push a tag like v1.0.0 (or v1.0.0-rc.1) to publish a GitHub release whose notes are that
-# version's section of CHANGELOG.md. Tags containing "-" are marked as pre-releases.
+# Publishes a GitHub release whose notes are the version's section of CHANGELOG.md.
+# Two ways to start it:
+#   - Actions, Release, Run workflow: tags the selected branch (normally main) with the version in
+#     apps/api/app/version.py and publishes the release. No terminal needed.
+#   - Push a tag like v1.0.0 (or v1.0.0-rc.1); it must match apps/api/app/version.py.
+# Versions containing "-" (release candidates) are marked as pre-releases.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,18 +19,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check the tag matches the app version
+      - name: Read the app version
+        id: version
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
           APP=$(python3 -c "import re;print(re.search(r'VERSION = \"(.+)\"', open('apps/api/app/version.py').read()).group(1))")
-          test "$TAG" = "$APP" || { echo "Tag $TAG does not match apps/api/app/version.py ($APP)"; exit 1; }
-      - name: Extract release notes from CHANGELOG.md
-        run: |
-          awk -v v="${GITHUB_REF_NAME#v}" 'index($0, "## [" v "]") == 1 {on=1; next} /^## / {if (on) exit} on' CHANGELOG.md > notes.md
-          test -s notes.md || { echo "No CHANGELOG section for ${GITHUB_REF_NAME#v}"; exit 1; }
-      - name: Publish the release
+          echo "app=$APP" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            TAG="${GITHUB_REF_NAME}"
+            test "${TAG#v}" = "$APP" || { echo "Tag $TAG does not match apps/api/app/version.py ($APP)"; exit 1; }
+          else
+            TAG="v$APP"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Refuse to publish the same version twice
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PRE=""; case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease";; esac
-          gh release create "$GITHUB_REF_NAME" --title "Galdus.ai $GITHUB_REF_NAME" --notes-file notes.md $PRE
+          if gh release view "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Release ${{ steps.version.outputs.tag }} already exists: bump apps/api/app/version.py first."; exit 1
+          fi
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          awk -v v="${{ steps.version.outputs.app }}" 'index($0, "## [" v "]") == 1 {on=1; next} /^## / {if (on) exit} on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "No CHANGELOG section for ${{ steps.version.outputs.app }}"; exit 1; }
+      - name: Publish the release (creates the tag when started by hand)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          PRE=""; case "$TAG" in *-*) PRE="--prerelease";; esac
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Galdus.ai $TAG" --notes-file notes.md $PRE
