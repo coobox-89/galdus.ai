@@ -412,7 +412,7 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 .arm-glow { position: absolute; inset: 0; mix-blend-mode: screen; background: radial-gradient(14% 18% at 55% 75%, rgba(182, 255, 0, .42), transparent 70%); animation: armPulse 3.2s ease-in-out infinite; }
 .arm-sweep { position: absolute; inset: 0; mix-blend-mode: screen; background: linear-gradient(125deg, transparent 44%, rgba(228, 255, 107, .6) 50%, transparent 56%); background-size: 300% 300%; animation: armSweep 3.8s cubic-bezier(.6, 0, .4, 1) infinite; }
 /* Face paint: effects live inside the exact shape of the paint (alpha mask), so they move with the skin. */
-.paint { position: absolute; left: 53.29%; top: 3.93%; width: 5.32%; height: 23.91%;
+.paint { position: absolute; left: 53.41%; top: 3.93%; width: 5.20%; height: 17.53%;
   -webkit-mask: var(--pm) center / 100% 100% no-repeat; mask: var(--pm) center / 100% 100% no-repeat; }
 .paint i { position: absolute; inset: 0; }
 /* a wet sheen that travels down the stroke, following the face from brow to cheek */
