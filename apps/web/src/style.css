@@ -461,15 +461,23 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
 .lh-submit { padding: 14px; border-radius: 12px; font-size: 1rem; }
 .lh-switch { text-align: center; color: #C9D6E5; font-size: 14px; margin: 18px 0 0; }
 
-.lh-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; padding: 22px clamp(20px, 5vw, 84px) 26px; }
-.lh-foot nav { display: flex; flex-wrap: wrap; gap: 6px 0; color: #C9D6E5; font-size: 14px; }
-.lh-foot nav > * { padding: 0 12px; border-left: 1px solid rgba(255, 255, 255, .3); color: inherit; }
-.lh-foot nav > :first-child { padding-left: 0; border-left: 0; }
-.lh-foot nav span { color: #93A6BE; }
-.lh-sign { display: flex; align-items: center; gap: 14px; margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(182, 255, 0, .7);
-  color: var(--lime); font-size: 12px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; }
-.lh-sign b { color: #fff; font-size: 18px; letter-spacing: -.01em; text-transform: none; }
-.lh-rule { width: 22px; height: 2px; background: var(--lime); }
+.lh-foot { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px 32px; padding: 22px clamp(20px, 5vw, 84px) 24px; }
+.lh-foot::before { content: ""; position: absolute; top: 0; left: clamp(20px, 5vw, 84px); right: clamp(20px, 5vw, 84px); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(182, 255, 0, .55) 20%, rgba(63, 212, 122, .45) 80%, transparent); }
+.lh-sign { display: flex; align-items: center; gap: 12px; }
+.lh-sign div { display: grid; gap: 2px; }
+.lh-sign b { font-size: 17px; font-weight: 800; letter-spacing: -.02em; color: #fff; }
+.lh-sign b i { font-style: normal; color: var(--lime); }
+.lh-sign span { font-size: 13px; color: #B9C7DB; }
+.lh-sign em { font-style: normal; font-weight: 600; background: linear-gradient(90deg, #E4FF6B, #B6FF00 50%, #3FD47A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lh-foot nav { display: flex; gap: 6px; justify-content: center; }
+.lh-foot nav a { color: #C9D6E5; font-size: 14px; font-weight: 500; text-decoration: none; padding: 7px 12px; border-radius: 999px; transition: color .2s, background .2s; }
+.lh-foot nav a:hover, .lh-foot nav a:focus-visible { color: #fff; background: rgba(182, 255, 0, .1); }
+.lh-meta { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin: 0; font-size: 12.5px; color: #8EA2BC; }
+.lh-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; font-weight: 600; color: #E8F5C8;
+  border: 1px solid rgba(182, 255, 0, .4); background: linear-gradient(135deg, rgba(182, 255, 0, .14), rgba(63, 212, 122, .06)); }
+.lh-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px rgba(182, 255, 0, .2); animation: pillPulse 2.4s ease-in-out infinite; }
+@keyframes pillPulse { 50% { box-shadow: 0 0 0 6px rgba(182, 255, 0, 0); } }
 
 @media (max-width: 1280px) {
   .lh-features { gap: 22px 28px; }
@@ -508,12 +516,18 @@ kbd { font: 600 11px var(--font); border: 1px solid var(--night-line-strong); bo
   .login-hero h1 { font-size: clamp(2.6rem, 11vw, 4.2rem); }
   .lh-features { grid-template-columns: 1fr 1fr; gap: 14px 18px; }
   .lh-card { width: 100%; max-width: 520px; justify-self: center; padding: 24px; }
-  .lh-foot { flex-direction: column-reverse; align-items: flex-start; }
+  .lh-foot { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 18px; padding-top: 28px; padding-bottom: 30px; }
+  .lh-sign { flex-direction: column; gap: 10px; }
+  .lh-sign b { font-size: 20px; }
+  .lh-sign span { font-size: 14px; }
+  .lh-sign em { display: block; margin-top: 2px; }
+  .lh-foot nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 360px; }
+  .lh-foot nav a { text-align: center; padding: 11px 10px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(11, 31, 59, .55); border-radius: 12px; }
+  .lh-meta { flex-direction: column; justify-content: center; gap: 10px; }
 }
 @media (max-width: 420px) {
   .lh-top { padding: 18px; }
   .lh-brand .wordmark { font-size: 19px; }
   .lh-main { padding-left: 18px; padding-right: 18px; }
-  .lh-sign { letter-spacing: .14em; font-size: 10.5px; }
 }
-@media (prefers-reduced-motion: reduce) { .hero-fog, .arm-glow, .arm-sweep, .paint-sweep { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .lh-pill i, .hero-fog, .arm-glow, .arm-sweep, .paint-sweep { animation: none; } }
