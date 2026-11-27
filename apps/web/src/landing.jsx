@@ -132,9 +132,18 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken }) {
       </main>
 
       <motion.footer className="lh-foot" {...at(2.4, { y: 10 })}>
-        <nav aria-label="Legal"><a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a><a href={href('/acceptable-use')}>Acceptable use</a>
-          <a href={REPO}>Source code</a><span>Early access</span></nav>
-        <p className="lh-sign"><b>Galdus.ai</b><span className="lh-rule" />Powered by you. Supercharged by AI.</p>
+        <div className="lh-sign">
+          <Mark size={30} />
+          <div>
+            <b>Galdus<i>.ai</i></b>
+            <span>Powered by you. <em>Supercharged by AI.</em></span>
+          </div>
+        </div>
+        <nav aria-label="Legal">
+          <a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a>
+          <a href={href('/acceptable-use')}>Acceptable use</a><a href={REPO}>Source code</a>
+        </nav>
+        <p className="lh-meta"><span className="lh-pill"><i />Early access</span><span>© {new Date().getFullYear()} Galdus.ai, AGPL-3.0</span></p>
       </motion.footer>
     </div>
   );
