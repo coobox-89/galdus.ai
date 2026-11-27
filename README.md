@@ -2,7 +2,9 @@
 
 **The Open AI Operating System.**
 
-Galdus.ai is an open, modular AI operating system for individuals and organizations.
+Galdus.ai is an independent, open-source, self-hostable AI platform for individuals, teams, and organizations. Its goal is to bring models, agents, knowledge, automation, and governance together behind one provider-neutral control plane.
+
+> **Status:** early development. This repository is a foundation scaffold, not a production-ready platform. Roadmap items are not implemented capabilities.
 
 ## Product areas
 
@@ -12,16 +14,23 @@ Galdus.ai is an open, modular AI operating system for individuals and organizati
 - **Automation** — orchestrate workflows and integrations.
 - **Governance** — apply access control, auditability, and operational policies.
 
-## Architecture direction
+## Architecture
 
-The initial implementation is intended to use a modular monolith with clear domain boundaries, with service extraction only when operational needs justify it.
+The initial implementation is a modular monolith: React + Vite web console, FastAPI backend, LiteLLM model gateway, and Docker Compose for local development. PostgreSQL/pgvector, identity, durable workflows, and the other domains remain planned work.
 
-Planned building blocks include React + Vite, FastAPI, PostgreSQL with pgvector, LiteLLM, and Docker Compose. These are architectural intentions, not a claim that every component is implemented.
+## Quick start
 
-## Status
+1. Copy `.env.example` to `.env`.
+2. Start Docker Compose: `docker compose up --build`.
+3. Open the web console at http://localhost:5173.
+4. API health check: http://localhost:8000/health and docs: http://localhost:8000/docs.
 
-Early-stage project. This repository is being initialized; do not treat it as production-ready.
+Configure provider credentials only in the backend `.env`. Never put secrets in browser code or commit `.env`.
+
+## Security warning
+
+This scaffold is for local development only. Do not expose it to the public internet as-is. Authentication, authorization, tenant isolation, rate limiting, secret management, audit logging, sandboxing, and hardened deployment controls must be implemented and tested before production use.
 
 ## License
 
-Intended license: **GNU Affero General Public License v3.0 only (AGPL-3.0-only)**. The complete license text and third-party notices must be added before public distribution. Until then, this README is not a substitute for the license terms.
+GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) and [license compliance notes](docs/LICENSE-COMPLIANCE.md). Third-party components retain their own licenses.
