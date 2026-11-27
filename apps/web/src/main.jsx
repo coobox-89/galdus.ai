@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
+import { AcceptableUse, Privacy, Terms } from './legal';
 import './style.css';
 
 const modules = [
@@ -182,7 +183,49 @@ function Workspace({ token, user, onExpired, onLogout }) {
         </div>
       </form>
       {error && <p role="alert" className="error">{error}</p>}
+      <AccountPanel token={token} onDeleted={onLogout} onError={handle} />
     </>
+  );
+}
+
+function AccountPanel({ token, onDeleted, onError }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function exportData() {
+    try {
+      const data = await api('/v1/auth/export', { token });
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'galdus-account-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { onError(err); }
+  }
+
+  async function deleteAccount(event) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await api('/v1/auth/account/delete', { token, method: 'POST', body: { password } });
+      onDeleted('Your account and its data were deleted.');
+    } catch (err) {
+      if (err.status === 401 && err.message === 'Password is incorrect') onError({ message: err.message });
+      else onError(err);
+    } finally { setBusy(false); setPassword(''); }
+  }
+
+  return (
+    <details className="account" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary>Account and data</summary>
+      <div className="row"><button type="button" className="secondary" onClick={exportData}>Download my data</button></div>
+      <form onSubmit={deleteAccount}>
+        <label>Confirm your password to permanently delete your account and workspaces you own alone
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required maxLength={128} />
+        </label>
+        <button className="danger" disabled={busy}>{busy ? 'Deleting…' : 'Delete account'}</button>
+      </form>
+    </details>
   );
 }
 
@@ -234,13 +277,25 @@ function App() {
       </section>
       <section className="playground">
         {token
-          ? <Workspace token={token} user={user} onExpired={expire} onLogout={() => clearSession('Signed out.')} />
+          ? <Workspace token={token} user={user} onExpired={expire} onLogout={(note) => clearSession(typeof note === 'string' ? note : 'Signed out.')} />
           : <AuthForm onAuthenticated={onAuthenticated} message={message} setMessage={setMessage} />}
         {message && !token && <p role="status" className="status">{message}</p>}
       </section>
-      <footer>Early access · Chat is the only live module today · <a href="https://github.com/coobox-89/galdus.ai">Source (AGPL-3.0-only)</a></footer>
+      <footer>
+        Early access · Chat is the only live module today ·{' '}
+        <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/acceptable-use">Acceptable use</a> ·{' '}
+        <a href="https://github.com/coobox-89/galdus.ai">Source (AGPL-3.0-only)</a>
+      </footer>
     </main>
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const routes = { '/privacy': Privacy, '/terms': Terms, '/acceptable-use': AcceptableUse };
+
+function Root() {
+  const Legal = routes[window.location.pathname.replace(/\/$/, '')];
+  if (Legal) return <main><nav><a href="/" className="brand"><strong>GALDUS<span>.AI</span></strong></a></nav><Legal /></main>;
+  return <App />;
+}
+
+createRoot(document.getElementById('root')).render(<Root />);

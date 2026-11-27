@@ -178,3 +178,20 @@ def test_application_tables_have_row_level_security(client):
         return {r[0] for r in rows}
 
     assert asyncio.run(check()) == {"users", "organizations", "memberships", "usage_events"}
+
+
+def test_export_and_delete_account(client, monkeypatch):
+    monkeypatch.setattr(chat_module.litellm, "acompletion", fake_completion())
+    email, headers = register(client, org="Solo Co")
+    client.post("/api/v1/chat/completions", headers=headers, json={"messages": [{"role": "user", "content": "hi"}]})
+
+    export = client.get("/api/v1/auth/export", headers=headers)
+    assert export.status_code == 200
+    data = export.json()
+    assert data["user"]["email"] == email
+    assert len(data["usage_events"]) == 1 and "content" not in data["usage_events"][0]
+
+    assert client.post("/api/v1/auth/account/delete", headers=headers, json={"password": "wrong-password-xyz"}).status_code == 401
+    assert client.post("/api/v1/auth/account/delete", headers=headers, json={"password": PASSWORD}).status_code == 204
+    assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD}).status_code == 401

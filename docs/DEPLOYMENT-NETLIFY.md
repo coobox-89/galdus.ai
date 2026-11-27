@@ -50,8 +50,8 @@ Secrets are typed directly into the Supabase/Render dashboards. Never paste them
 
 ## 3. Frontend on Netlify
 
-1. **Add new site → Import from Git →** `coobox-89/galdus.ai`. Build settings come from `netlify.toml`.
-2. Set the build variable `VITE_API_BASE_URL=https://<api-host>/api` (public, not a secret) and deploy.
+1. The Netlify project `galdus-ai` (https://galdus-ai.netlify.app) exists. In **Project configuration → Build & deploy → Link repository** connect `coobox-89/galdus.ai`, branch `main`. Build settings come from `netlify.toml`.
+2. The public API URL is committed in `apps/web/.env.production` (`https://galdus-api.onrender.com/api`). If Render assigns a different hostname, change that file (or set `VITE_API_BASE_URL` in Netlify, which takes precedence) and redeploy.
 3. Put the resulting origin into Render `CORS_ORIGINS` and redeploy the API.
 
 ## 4. Smoke test (must pass before inviting anyone)
@@ -68,4 +68,5 @@ Secrets are typed directly into the Supabase/Render dashboards. Never paste them
 - Rate limiting is in-process: run a **single** API instance or add a shared limiter before scaling out.
 - Access tokens are short-lived JWTs (30 min) without refresh/revocation; users sign in again on expiry.
 - No email verification or password reset yet (needs a transactional email provider).
-- Privacy policy, terms and acceptable-use pages must be written and approved by the owner before public signups.
+- Draft privacy, terms and acceptable-use pages exist at `/privacy`, `/terms`, `/acceptable-use`; the owner must complete the bracketed fields and approve them before public sign-ups.
+- Users can download their data (`GET /api/v1/auth/export`) and delete their account (`POST /api/v1/auth/account/delete`).

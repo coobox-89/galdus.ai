@@ -158,3 +158,41 @@ async def organizations(user: User = Depends(current_user), db: AsyncSession = D
         .order_by(Membership.created_at)
     )
     return [OrganizationResponse(id=org.id, name=org.name, slug=org.slug, role=role) for org, role in result.all()]
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+
+@router.get("/export")
+async def export_account(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Return the personal data Galdus.ai stores about the caller (GDPR art. 15/20)."""
+    from .models import UsageEvent
+    orgs = await organizations(user=user, db=db)
+    usage = (await db.execute(
+        select(UsageEvent).where(UsageEvent.user_id == user.id).order_by(UsageEvent.created_at)
+    )).scalars().all()
+    return {
+        "user": {"id": str(user.id), "email": user.email, "full_name": user.full_name, "created_at": user.created_at.isoformat()},
+        "organizations": [o.model_dump(mode="json") for o in orgs],
+        "usage_events": [
+            {"model": u.model, "prompt_tokens": u.prompt_tokens, "completion_tokens": u.completion_tokens,
+             "organization_id": str(u.organization_id), "created_at": u.created_at.isoformat()}
+            for u in usage
+        ],
+    }
+
+
+@router.post("/account/delete", status_code=204, dependencies=[Depends(auth_rate_limit)])
+async def delete_account(body: DeleteAccountRequest, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Delete the caller and every organization where they are the only member."""
+    from sqlalchemy import delete, func
+    if not verify_password(body.password, user.password_hash):
+        raise _unauthorized("Password is incorrect")
+    org_ids = (await db.execute(select(Membership.organization_id).where(Membership.user_id == user.id))).scalars().all()
+    for org_id in org_ids:
+        members = await db.scalar(select(func.count()).select_from(Membership).where(Membership.organization_id == org_id))
+        if members == 1:
+            await db.execute(delete(Organization).where(Organization.id == org_id))
+    await db.execute(delete(User).where(User.id == user.id))
+    await db.commit()

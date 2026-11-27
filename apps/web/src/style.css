@@ -10,3 +10,6 @@ select{background:#0d1118;border:1px solid #3b4657;border-radius:9px;color:white
 .empty{font-style:italic}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.usage{color:#7e8999;font-size:12px}
 .error{color:#ff8a8a!important;margin-top:12px}footer a{color:#56c5d5}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.account{margin-top:22px;border-top:1px solid #303846;padding-top:14px}.account summary{cursor:pointer;color:#aab5c5;font-weight:700}
+.danger{background:#ff8a8a;color:#1a0707}.legal{max-width:760px;padding:40px 0;line-height:1.7;color:#c5d0df}.legal h1{font-size:44px;letter-spacing:-2px}
+.legal h2{font-size:20px;margin-top:32px}.legal a,.brand{color:#56c5d5;text-decoration:none}.brand strong{color:#eef2f8}.draft{border:1px solid #6b5a2a;background:#2a2310;color:#f0d68a;border-radius:8px;padding:10px 14px}
