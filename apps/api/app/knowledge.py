@@ -200,6 +200,7 @@ async def ingest(db: AsyncSession, membership: Membership, col: KnowledgeCollect
 
 @router.post("/collections/{collection_id}/documents/text", response_model=DocumentOut, status_code=201)
 async def add_text(collection_id: uuid.UUID, body: TextDocument, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    require_manager(membership)
     enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
     return await ingest(db, membership, col, body.title.strip(), body.content, "text")
@@ -208,6 +209,7 @@ async def add_text(collection_id: uuid.UUID, body: TextDocument, membership: Mem
 @router.post("/collections/{collection_id}/documents/upload", response_model=DocumentOut, status_code=201)
 async def upload(collection_id: uuid.UUID, file: UploadFile = File(...), title: str | None = Form(default=None),
                  membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    require_manager(membership)
     enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
     data = await file.read(MAX_UPLOAD_BYTES + 1)
@@ -224,6 +226,7 @@ class UrlDocument(BaseModel):
 @router.post("/collections/{collection_id}/documents/url", response_model=DocumentOut, status_code=201)
 async def add_url(collection_id: uuid.UUID, body: UrlDocument, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
     """Import the readable text of a public web page."""
+    require_manager(membership)
     from .tools import fetch_public_text
     enforce(f"ingest:{membership.user_id}", 30)
     col = await get_collection(db, membership, collection_id)
@@ -233,6 +236,7 @@ async def add_url(collection_id: uuid.UUID, body: UrlDocument, membership: Membe
 
 @router.delete("/documents/{document_id}", status_code=204)
 async def delete_document(document_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    require_manager(membership)
     result = await db.execute(delete(KnowledgeDocument).where(
         KnowledgeDocument.id == document_id, KnowledgeDocument.organization_id == membership.organization_id))
     if result.rowcount == 0:

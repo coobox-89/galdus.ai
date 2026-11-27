@@ -22,6 +22,8 @@ class User(Base):
     custom_instructions: Mapped[str] = mapped_column(Text, default="", server_default="")
     response_style: Mapped[str] = mapped_column(String(20), default="balanced", server_default="balanced")
     has_password: Mapped[bool] = mapped_column(Boolean, default=True, server_default=sa_true())
+    # Access tokens issued before this moment are rejected (password change, sign out everywhere).
+    tokens_valid_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     memberships: Mapped[list["Membership"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 

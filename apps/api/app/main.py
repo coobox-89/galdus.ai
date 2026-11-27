@@ -41,6 +41,8 @@ async def security_middleware(request: Request, call_next):
     limit = 6_000_000 if path.endswith(("/documents/upload", "/chat/attachments")) or "/conversations/" in path else settings.max_request_bytes
     if length and length.isdigit() and int(length) > limit:
         return JSONResponse(status_code=413, content={"detail": "Request body too large"})
+    if request.method in ("POST", "PUT", "PATCH") and not length and "chunked" in request.headers.get("transfer-encoding", "").lower():
+        return JSONResponse(status_code=411, content={"detail": "Content-Length is required"})
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")

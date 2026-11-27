@@ -89,7 +89,7 @@ export function KnowledgePage() {
           </button>))}
         </div>
         <div className="cols">
-          <div className="panel form">
+          {ws.canManage ? <div className="panel form">
             <h3>Add to {col.name}</h3>
             <label className={`empty ${drag ? 'drag' : ''}`} style={{ cursor: 'pointer', borderColor: drag ? 'var(--lime)' : undefined }}
               onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
@@ -108,7 +108,7 @@ export function KnowledgePage() {
                 <div><button className="btn ghost" disabled={!!busy}>Add text</button></div>
               </form>
             </details>
-          </div>
+          </div> : <div className="panel form"><h3>Add to {col.name}</h3><p className="muted small" style={{ margin: 0 }}>Workspace owners and admins add and remove documents. You can search and use this collection in chat, agents and apps.</p></div>}
           <div className="panel form">
             <h3>Try a search</h3>
             <form className="actions" onSubmit={search} style={{ flexWrap: 'nowrap' }}>
@@ -128,9 +128,9 @@ export function KnowledgePage() {
             <div className="table-wrap"><table><thead><tr><th>Title</th><th>Source</th><th>Size</th><th>Indexed</th><th>Added</th><th /></tr></thead>
               <tbody>{docs.map(d => <tr key={d.id}><td>{d.title}</td><td>{({ google_drive: 'Google Drive', microsoft: 'SharePoint/OneDrive', web: 'Web page', pdf: 'PDF', text: 'Text' })[d.source_type] || d.source_type}</td><td className="num">{d.chars >= 1000 ? `${Math.round(d.chars / 1000)}k` : d.chars} characters, {plural(d.chunks, 'part')}</td>
                 <td>{d.embedded ? <span className="chip ok">semantic</span> : <span className="chip">keyword</span>}</td><td>{when(d.created_at)}</td>
-                <td style={{ display: 'flex', gap: 4 }}>{['google_drive', 'microsoft'].includes(d.source_type) && <button type="button" className="btn quiet sm" onClick={() => wrap('sync', async () => {
+                <td style={{ display: 'flex', gap: 4 }}>{ws.canManage && ['google_drive', 'microsoft'].includes(d.source_type) && <button type="button" className="btn quiet sm" onClick={() => wrap('sync', async () => {
                   const r = await ws.call(`/v1/connectors/documents/${d.id}/resync`, { method: 'POST' }); after(); ws.toast(r.updated ? 'Document updated from the drive.' : 'Already up to date.'); })}>Sync</button>}
-                  <button type="button" className="btn quiet sm" onClick={() => removeDoc(d)}>Remove</button></td></tr>)}</tbody></table></div>)}
+                  {ws.canManage && <button type="button" className="btn quiet sm" onClick={() => removeDoc(d)}>Remove</button>}</td></tr>)}</tbody></table></div>)}
         </div>
       </>}
     </div>

@@ -1,5 +1,6 @@
 """Sign-in with Google/GitHub, password reset and change, chat preferences."""
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
@@ -18,6 +19,8 @@ from .mailer import email_enabled, send
 from .models import Membership, Organization, PasswordReset, User, UserIdentity
 from .oauth import PROVIDERS, authorize_url, configured, exchange_code, fetch_identity, read_state
 from .ratelimit import client_ip, enforce
+
+OAUTH_COOKIE = "galdus_oauth"
 
 router = APIRouter(prefix="/api/v1/auth", tags=["accounts"])
 LOGIN_PROVIDERS = ("google", "github")
@@ -43,7 +46,12 @@ async def oauth_start(provider: str, request: Request):
     if provider not in LOGIN_PROVIDERS:
         raise HTTPException(status_code=404, detail="Unknown provider")
     extra = {"prompt": "select_account"} if provider == "google" else {}
-    return RedirectResponse(authorize_url(provider, "login", PROVIDERS[provider]["login_scope"], extra_params=extra), status_code=302)
+    # Bind the flow to this browser: the callback must come back with the same cookie (prevents login CSRF).
+    nonce = secrets.token_urlsafe(24)
+    url = authorize_url(provider, "login", PROVIDERS[provider]["login_scope"], extra_state={"n": _hash(nonce)}, extra_params=extra)
+    resp = RedirectResponse(url, status_code=302)
+    resp.set_cookie(OAUTH_COOKIE, nonce, max_age=600, httponly=True, secure=settings.is_production, samesite="lax", path="/api/v1/auth/oauth")
+    return resp
 
 
 async def _login_user(db: AsyncSession, provider: str, ident: dict) -> User:
@@ -68,7 +76,7 @@ async def _login_user(db: AsyncSession, provider: str, ident: dict) -> User:
 
 
 @router.get("/oauth/{provider}/callback")
-async def oauth_callback(provider: str, code: str | None = None, state: str | None = None, error: str | None = None,
+async def oauth_callback(provider: str, request: Request, code: str | None = None, state: str | None = None, error: str | None = None,
                          db: AsyncSession = Depends(get_db)):
     try:
         if error or not code or not state:
@@ -76,12 +84,19 @@ async def oauth_callback(provider: str, code: str | None = None, state: str | No
         data = read_state(state)
         if data.get("p") != provider or data.get("purpose") != "login":
             raise HTTPException(status_code=400, detail="Invalid sign-in state. Please try again.")
+        nonce = request.cookies.get(OAUTH_COOKIE, "")
+        if not nonce or not hmac.compare_digest(_hash(nonce), str(data.get("n", ""))):
+            raise HTTPException(status_code=400, detail="Sign-in must start and finish in the same browser. Please try again.")
         tokens = await exchange_code(provider, "login", code, data)
         user = await _login_user(db, provider, await fetch_identity(provider, tokens["access_token"]))
     except HTTPException as exc:
-        return RedirectResponse(_frontend(f"oauth?error={quote(str(exc.detail))}"), status_code=302)
+        resp = RedirectResponse(_frontend(f"oauth?error={quote(str(exc.detail))}"), status_code=302)
+        resp.delete_cookie(OAUTH_COOKIE, path="/api/v1/auth/oauth")
+        return resp
     token = create_access_token(str(user.id))
-    return RedirectResponse(_frontend(f"oauth?token={token}&expires_in={settings.jwt_expire_minutes * 60}"), status_code=302)
+    resp = RedirectResponse(_frontend(f"oauth?token={token}&expires_in={settings.jwt_expire_minutes * 60}"), status_code=302)
+    resp.delete_cookie(OAUTH_COOKIE, path="/api/v1/auth/oauth")
+    return resp
 
 
 # ---- Password reset / change -----------------------------------------------
@@ -121,6 +136,7 @@ async def reset(body: ResetIn, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Ask for a new one.")
     user = await db.get(User, pr.user_id)
     user.password_hash, user.has_password = hash_password(body.password), True
+    user.tokens_valid_after = _revoke_now()
     pr.used_at = datetime.now(timezone.utc)
     await db.commit()
     return {"ok": True}
@@ -132,8 +148,23 @@ async def change(body: ChangeIn, user: User = Depends(current_user), db: AsyncSe
     if user.has_password and not (body.current_password and verify_password(body.current_password, user.password_hash)):
         raise HTTPException(status_code=400, detail="Your current password is not correct.")
     user.password_hash, user.has_password = hash_password(body.new_password), True
+    user.tokens_valid_after = _revoke_now()
+    await db.commit()
+    # Other devices are signed out; this one gets a fresh token.
+    return {"ok": True, "access_token": create_access_token(str(user.id)), "expires_in": settings.jwt_expire_minutes * 60}
+
+
+@router.post("/logout-all")
+async def logout_all(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Sign out every device, including this one."""
+    user.tokens_valid_after = _revoke_now()
     await db.commit()
     return {"ok": True}
+
+
+def _revoke_now() -> datetime:
+    # JWT iat has one-second precision; tokens issued in an earlier second are rejected.
+    return datetime.now(timezone.utc).replace(microsecond=0)
 
 
 # ---- Chat preferences ----------------------------------------------------------

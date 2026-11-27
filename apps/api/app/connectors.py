@@ -149,6 +149,8 @@ def _q(text: str) -> str:
 async def browse(connection_id: uuid.UUID, folder: str | None = Query(default=None, max_length=500),
                  search: str | None = Query(default=None, max_length=200),
                  membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    # The drive belongs to the person who connected it: only owners and admins may browse it.
+    require_role(membership, "owner", "admin")
     c = await get_cloud(db, membership, connection_id)
     items: list[dict] = []
     if c.provider == "google_drive":
@@ -230,6 +232,7 @@ class ImportIn(BaseModel):
 @router.post("/{connection_id}/import", status_code=201)
 async def import_files(connection_id: uuid.UUID, body: ImportIn, membership: Membership = Depends(current_membership),
                        db: AsyncSession = Depends(get_db)):
+    require_role(membership, "owner", "admin")
     c = await get_cloud(db, membership, connection_id)
     col = await get_collection(db, membership, body.collection_id)
     results = []
@@ -267,6 +270,7 @@ async def resync_document(db: AsyncSession, membership: Membership, doc: Knowled
 
 @router.post("/documents/{document_id}/resync")
 async def resync(document_id: uuid.UUID, membership: Membership = Depends(current_membership), db: AsyncSession = Depends(get_db)):
+    require_role(membership, "owner", "admin")
     doc = await db.scalar(select(KnowledgeDocument).where(KnowledgeDocument.id == document_id,
                                                           KnowledgeDocument.organization_id == membership.organization_id))
     if not doc or not doc.external_ref or not doc.external_connection_id:

@@ -138,6 +138,11 @@ async def delete_conversation(cid: uuid.UUID, membership: Membership = Depends(c
     await db.commit()
 
 
+def _looks_like_image(data: bytes) -> bool:
+    return (data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff") or data[:6] in (b"GIF87a", b"GIF89a")
+            or (data[:4] == b"RIFF" and data[8:12] == b"WEBP"))
+
+
 @router.post("/chat/attachments")
 async def attachment(file: UploadFile = File(...), membership: Membership = Depends(current_membership)):
     """Extract a chat attachment. Nothing is stored: the client sends it back with the message."""
@@ -148,6 +153,8 @@ async def attachment(file: UploadFile = File(...), membership: Membership = Depe
     if ext in IMAGE_TYPES:
         if len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(status_code=413, detail="Images are limited to 4 MB")
+        if not _looks_like_image(data):
+            raise HTTPException(status_code=400, detail="This file is not a valid image")
         return {"name": name, "kind": "image", "data_url": f"data:{IMAGE_TYPES[ext]};base64,{base64.b64encode(data).decode()}"}
     text, _ = extract_text(name, data)
     text = text.strip()
