@@ -159,7 +159,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
         </div>
         <nav aria-label="Legal">
           <a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a>
-          <a href={href('/acceptable-use')}>Acceptable use</a><a href={href('/terms')}>Trademarks</a>
+          <a href={href('/acceptable-use')}>Acceptable use</a><a href={href('/terms#trademarks')}>Trademarks</a>
           <a href={`${REPO}/tree/main/docs`} target="_blank" rel="noreferrer">Docs</a><a href={REPO} target="_blank" rel="noreferrer">Source code</a>
         </nav>
         <p className="lh-meta"><span className="lh-pill"><i />Public beta</span><span>© {new Date().getFullYear()} Mario Cubello, AGPL-3.0</span></p>

@@ -9,6 +9,7 @@ import { CheckCircle2, Plus } from 'lucide-react';
 import { useWs } from './workspace';
 import { PageHead, Pixels, when, stagger, rise } from './ui';
 import { GUIDE, ProviderMark } from './providerguide';
+import { href } from './paths';
 
 const clean = label => label.replace(/ \(.*\)$/, '');
 
@@ -74,7 +75,7 @@ export function ModelsPage() {
           })}
         </motion.div>
         {!ws.canManage && <p className="muted small">Only workspace owners and admins can connect providers. You can still open a card to see how it works.</p>}
-        <p className="tm-note">Product names and logos belong to their respective owners and are shown only to indicate compatibility. Galdus.ai is an independent open-source project, not affiliated with or endorsed by any of these providers. <a href={`${import.meta.env.BASE_URL}#/terms`}>Trademarks</a></p>
+        <p className="tm-note">Product names and logos belong to their respective owners and are shown only to indicate compatibility. Galdus.ai is an independent open-source project, not affiliated with or endorsed by any of these providers. <a href={href('/terms#trademarks')} target="_blank" rel="noopener noreferrer">Trademarks</a></p>
       </section>
     </div>
   );

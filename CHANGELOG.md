@@ -11,6 +11,10 @@
 - Home scene: the lime rim light follows the Viking's outline and fades into the background, instead of being clipped to the rectangle of the photo.
 - README screenshots of the sign-in page and Home updated.
 
+### Fixed
+
+- The Trademarks link on Models opened Home: it now opens the trademark disclosure (Terms, section 10) in a new tab. The sign-in page link goes to the same section, and legal pages scroll to the section named in the address.
+
 ## [1.0.0-rc.1] (2026-11-27)
 
 Release candidate after the production-readiness review ([security review](docs/security/review-2026-11-27.md), [release checklist](docs/RELEASE_CHECKLIST.md)).

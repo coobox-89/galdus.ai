@@ -96,3 +96,13 @@ test('the platform admin sees the console and the setup guides', async ({ page }
   await expect(page.getByText('/api/v1/auth/oauth/microsoft/callback')).toBeVisible();
   expect(problems).toEqual([]);
 });
+
+test('the Trademarks link on Models opens the trademark disclosure', async ({ page, context }) => {
+  await register(page, `tm-${Date.now()}@example.com`);
+  await page.evaluate(() => { window.location.hash = '/models'; });
+  const [terms] = await Promise.all([context.waitForEvent('page'), page.locator('.tm-note a', { hasText: 'Trademarks' }).click()]);
+  await terms.waitForLoadState();
+  expect(new URL(terms.url()).pathname.endsWith('/terms')).toBe(true);
+  await expect(terms.getByRole('heading', { name: '10. Trademarks' })).toBeInViewport();
+  await expect(terms.locator('#trademarks')).toContainText('not affiliated with');
+});
