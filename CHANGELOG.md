@@ -2,6 +2,14 @@
 
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- HD Viking artwork. Sign-in: the new illustration replaces the reconstructed one (no more blurred patch on the right), registered to the same framing so the glow, sweep and sparks stay on the arm; the arm mask and the 70 spark points are traced again from the new image. Home: a larger cutout of the Viking with his phone (900 px instead of 393 px).
+- Home scene motion: the Viking fades and rises in, then floats gently; the lime halo breathes; the photo fades into the page at the belt. All of it stays still with reduced motion.
+- README screenshots of the sign-in page and Home updated.
+
 ## [1.0.0-rc.1] (2026-11-27)
 
 Release candidate after the production-readiness review ([security review](docs/security/review-2026-11-27.md), [release checklist](docs/RELEASE_CHECKLIST.md)).

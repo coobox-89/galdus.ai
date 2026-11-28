@@ -807,8 +807,14 @@ input[type=range] { accent-color: var(--lime); padding: 0; background: none; bor
 .scene-glow { position: absolute; right: -6%; bottom: 4%; width: 92%; height: 92%; pointer-events: none; border-radius: 50%;
   background: radial-gradient(42% 38% at 58% 52%, rgba(182, 255, 0, .30), rgba(110, 220, 60, .14) 45%, transparent 72%),
               radial-gradient(60% 55% at 55% 55%, rgba(63, 212, 122, .12), transparent 70%); filter: blur(18px); }
-.scene-viking { position: absolute; right: 0; bottom: 0; width: 74%; height: auto; display: block;
-  filter: drop-shadow(0 0 18px rgba(182, 255, 0, .22)) drop-shadow(0 20px 30px rgba(2, 8, 20, .55)); }
+.scene-viking-wrap { position: absolute; right: 0; bottom: 0; width: 74%; }
+.scene-viking { display: block; width: 100%; height: auto; user-select: none;
+  filter: drop-shadow(0 0 18px rgba(182, 255, 0, .22)) drop-shadow(0 20px 30px rgba(2, 8, 20, .55));
+  /* The photo ends at the belt: fade it into the page instead of a hard edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 99%); mask-image: linear-gradient(to bottom, #000 80%, transparent 99%); }
+.scene-glow.live { animation: haloBreath 5.5s ease-in-out infinite; }
+@keyframes haloBreath { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .scene-glow.live { animation: none; } }
 /* Chat bubble floating above the phone, tail pointing at it */
 .scene-bubble { --tail: 84%; position: absolute; left: 0; bottom: 47%; width: 46%; z-index: 1; display: grid; gap: 6px; padding: 9px 10px 10px;
   border-radius: 16px; background: rgba(14, 36, 68, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -833,7 +839,7 @@ input[type=range] { accent-color: var(--lime); padding: 0; background: none; bor
 }
 @media (max-width: 600px) {
   .scene { width: 100%; max-width: 420px; justify-self: center; }
-  .scene-viking { width: 78%; }
+  .scene-viking-wrap { width: 78%; }
   .scene-bubble { --tail: 76%; width: 52%; bottom: 46%; padding: 7px 8px 8px; }
   .scene-chat { height: 132px; }
   .sbub { font-size: 10.5px; }
