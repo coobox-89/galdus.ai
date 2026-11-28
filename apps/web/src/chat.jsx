@@ -192,10 +192,10 @@ export function ChatPage({ go }) {
           {messages.length === 0 && (
             <motion.div className="chat-empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <h2 className="grad-text" style={{ fontSize: 'var(--step-3)' }}>How can I help, {ws.user.full_name.split(' ')[0]}?</h2>
-              <p className="muted" style={{ margin: 0 }}>{persona ? persona.description : ''}</p>
+              <p className="muted chat-empty-lede">{persona ? persona.description : ''}</p>
               <div className="persona-grid">{personas.map(p => (
                 <button key={p.id} type="button" className={`persona ${settings.persona === p.id ? 'active' : ''}`} onClick={() => change({ persona: p.id })}>
-                  <b>{p.name}</b><small>{p.description.split('. ')[0]}.</small></button>))}</div>
+                  <b>{p.name}</b><small>{p.description.split('. ')[0].replace(/\.$/, '')}.</small></button>))}</div>
               <div className="suggestions">{(STARTERS[settings.persona] || STARTERS.assistant).map(s => (
                 <button key={s} type="button" className="suggestion" onClick={() => setPrompt(s)}>{s}</button>))}</div>
             </motion.div>)}

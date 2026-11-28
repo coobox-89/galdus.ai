@@ -11,6 +11,10 @@
 - Home scene: the lime rim light follows the Viking's outline and fades into the background, instead of being clipped to the rectangle of the photo.
 - README screenshots of the sign-in page and Home updated.
 
+### Fixed
+
+- Chat: the starter suggestions keep the same layout for every persona (two on top, the third centred below) and the persona description reserves two lines, so the persona cards never jump when you switch. The Tutor card no longer ends with a double full stop.
+
 ## [1.0.0-rc.1] (2026-11-27)
 
 Release candidate after the production-readiness review ([security review](docs/security/review-2026-11-27.md), [release checklist](docs/RELEASE_CHECKLIST.md)).

@@ -96,3 +96,24 @@ test('the platform admin sees the console and the setup guides', async ({ page }
   await expect(page.getByText('/api/v1/auth/oauth/microsoft/callback')).toBeVisible();
   expect(problems).toEqual([]);
 });
+
+test('chat starters keep the same layout for every persona', async ({ page }) => {
+  await register(page, `st-${Date.now()}@example.com`);
+  await page.evaluate(async () => {
+    await fetch('http://127.0.0.1:8000/api/v1/models/connections', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('galdus_token')}` },
+      body: JSON.stringify({ provider: 'openai_compatible', label: 'Local', api_base: 'http://127.0.0.1:9002/v1', default_model: 'demo-llm' }) });
+  });
+  await page.reload();
+  await page.locator('nav').getByText('Chat', { exact: true }).click();
+  await expect(page.locator('.persona-grid .persona')).toHaveCount(6);
+  const positions = new Set();
+  for (const persona of await page.locator('.persona-grid .persona').all()) {
+    await persona.click();
+    await page.waitForTimeout(150);
+    const grid = await page.locator('.persona-grid').boundingBox();
+    const starters = await page.locator('.suggestions').boundingBox();
+    positions.add(`${Math.round(grid.y)}/${Math.round(starters.height)}`);
+    await expect(page.locator('.persona-grid small', { hasText: /\.\.$/ })).toHaveCount(0);
+  }
+  expect([...positions]).toHaveLength(1);
+});
