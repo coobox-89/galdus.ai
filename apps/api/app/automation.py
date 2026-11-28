@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Automation: run agents on a schedule (cron) or from an incoming webhook, and
 optionally deliver results to an outgoing webhook (Slack, Teams, n8n, Make, Zapier...).
 

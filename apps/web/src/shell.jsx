@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { Bot, BookOpen, Cpu, LayoutDashboard, LayoutGrid, LogOut, Menu, MessageSquare, Plug, Search, ShieldCheck, UserCog, Users, Workflow, MailCheck } from 'lucide-react';

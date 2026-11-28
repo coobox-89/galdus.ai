@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Write the OpenAPI document to a file: python -m app.openapi_export ../../docs/api/openapi.json
 
 The interactive docs (/docs) are off in production, so the generated document is committed and CI

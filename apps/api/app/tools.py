@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Agent tools: built-in tools and remote MCP servers (Streamable HTTP).
 
 MCP servers are registered per workspace with an allowlist of tool names; agents

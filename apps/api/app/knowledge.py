@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Knowledge module: collections of documents, chunking, embeddings and retrieval.
 
 Retrieval is semantic (pgvector cosine distance) when the collection has an

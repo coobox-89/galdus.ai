@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Session revocation: tokens issued before users.tokens_valid_after are rejected."""
 from alembic import op
 import sqlalchemy as sa

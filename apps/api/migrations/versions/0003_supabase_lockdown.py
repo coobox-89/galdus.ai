@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Keep application tables private from Supabase's auto-generated Data API.
 
 Supabase exposes tables in the `public` schema through PostgREST to the `anon`

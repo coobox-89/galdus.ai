@@ -1,6 +1,6 @@
 # Galdus.ai: project handoff
 
-> Context for an AI coding agent (or a new maintainer) continuing the work. Verify against the code: this page summarizes, the code and tests decide.
+> Context for a developer or new maintainer continuing the work. Verify against the code: this page summarizes, the code and tests decide.
 
 - **Repository:** https://github.com/coobox-89/galdus.ai, default branch `main`, license AGPL-3.0-only.
 - **Version:** 1.0.0-rc.1 (`apps/api/app/version.py`, `apps/web/package.json`, `apps/api/pyproject.toml`; a test keeps them equal).

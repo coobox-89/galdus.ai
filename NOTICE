@@ -1,7 +1,20 @@
 Galdus.ai
+Copyright (C) 2026 Mario Cubello
+Author: Mario Cubello
 
 SPDX-License-Identifier: AGPL-3.0-only
 
-This repository is licensed under the GNU Affero General Public License version 3 only. See LICENSE for the complete, unmodified license text.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3 of the License only.
 
-Copyright ownership and contributor attribution must be completed by the respective copyright holders before a public release. Third-party components retain their own copyright and license terms.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program (see LICENSE). If not, see <https://www.gnu.org/licenses/>.
+
+Third-party components retain their own copyright and license terms. Provider
+names and logos in apps/web/public/brand/providers are trademarks of their
+respective owners and are not covered by this license.

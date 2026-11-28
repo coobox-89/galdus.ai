@@ -135,7 +135,7 @@ Typeface: Montserrat. Logo files: [`logo.svg`](docs/assets/logo.svg) and [`logo-
 | [Decision records](docs/architecture/0001-modular-monolith.md) | Why a modular monolith |
 | [Changelog](CHANGELOG.md) | Release history |
 | [License compliance](docs/license-compliance.md) | AGPL-3.0 obligations before each release |
-| [Project handoff](docs/CLAUDE_HANDOFF.md) | Full context for an AI coding agent continuing the work |
+| [Project handoff](docs/HANDOFF.md) | Full context for a developer continuing the work |
 
 ## Contributing
 
@@ -143,7 +143,9 @@ Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) fi
 
 ## License
 
-GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) and the [license compliance notes](docs/license-compliance.md). Third-party components keep their own licenses.
+Copyright (C) 2026 Mario Cubello. Galdus.ai is created and maintained by **Mario Cubello**.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3 only (`AGPL-3.0-only`). It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See [LICENSE](LICENSE) and the [license compliance notes](docs/license-compliance.md). Third-party components keep their own licenses.
 
 ## Trademarks
 

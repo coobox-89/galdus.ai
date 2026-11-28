@@ -15,6 +15,6 @@
 | [Roadmap](product/roadmap.md) | Everyone | What ships today and what comes next |
 | [Architecture decisions](architecture/0001-modular-monolith.md) | Contributors | Why a modular monolith, and the domain map |
 | [License compliance](license-compliance.md) | Maintainers | AGPL-3.0 checklist before each release |
-| [Project handoff](CLAUDE_HANDOFF.md) | AI coding agents | Context to continue development |
+| [Project handoff](HANDOFF.md) | Developers and maintainers | Context to continue development |
 
 Brand assets live in [`assets/`](assets): logo, animated logo, banner, social preview, page headers and the screenshots in [`assets/screens`](assets/screens). The social preview (`assets/social-preview.png`, 1280 by 640) is uploaded in the repository settings under **Social preview**.

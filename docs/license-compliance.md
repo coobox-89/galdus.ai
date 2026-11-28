@@ -6,7 +6,7 @@ Project license: GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). 
 
 Before each public release:
 
-- [ ] Confirm copyright holders and contributor attribution; do not assume project ownership for contributors.
+- [x] Copyright holder: Mario Cubello (see `NOTICE`). Each source file carries an SPDX header. Contributions from third parties keep their authors' copyright unless assigned.
 - [ ] Preserve upstream copyright, license, warranty, and modification notices.
 - [ ] Review each dependency, container base image, plugin, font, dataset, model weight, and asset license separately.
 - [ ] Generate and publish an SBOM and third-party notices.

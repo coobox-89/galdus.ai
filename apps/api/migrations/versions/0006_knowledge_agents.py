@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Knowledge collections/documents/chunks (pgvector + full-text), agents and runs."""
 from alembic import op
 import sqlalchemy as sa

@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { defineConfig } from '@playwright/test';
 
 // End-to-end tests run the real API (needs DATABASE_URL), the built console and a fake model server.

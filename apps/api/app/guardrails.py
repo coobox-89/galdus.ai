@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Lightweight guardrails for untrusted content entering prompts.
 
 Retrieved documents, tool results and webhook inputs are data, not instructions.
