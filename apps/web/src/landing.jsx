@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { BookOpen, Box, Bot, Code2, LogIn, Mail, ShieldCheck, Workflow } from 'lucide-react';
@@ -168,7 +173,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
           <a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a>
           <a href={href('/acceptable-use')}>Acceptable use</a><a href={REPO}>Source code</a>
         </nav>
-        <p className="lh-meta"><span className="lh-pill"><i />Early access</span><span>© {new Date().getFullYear()} Galdus.ai, AGPL-3.0</span></p>
+        <p className="lh-meta"><span className="lh-pill"><i />Early access</span><span>© {new Date().getFullYear()} Mario Cubello, Galdus.ai. AGPL-3.0</span></p>
         <p className="lh-tm">Third-party names and logos belong to their owners and are used only to indicate compatibility. Galdus.ai is independent and not affiliated with any AI provider. <a href={href('/terms')}>Trademarks</a></p>
       </motion.footer>
     </div>

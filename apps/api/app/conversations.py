@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Chat v2: saved conversations, personas, personal instructions, attachments,
 optional grounding on a knowledge collection, and streamed answers (Server-Sent Events)."""
 import base64

@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Outgoing transactional email over SMTP (works with Resend, Brevo, SES, Mailgun...)."""
 import asyncio
 import logging

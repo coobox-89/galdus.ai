@@ -27,6 +27,8 @@
     "active": true,
     "targets": "all",
     "category": "Productivity",
+    "publisher": "Mario Cubello",
+    "copyright": "Copyright (C) 2026 Mario Cubello. Licensed under AGPL-3.0-only.",
     "shortDescription": "The Open AI Operating System",
     "longDescription": "A self-hostable workspace for models, agents, knowledge, automation and governance.",
     "icon": [

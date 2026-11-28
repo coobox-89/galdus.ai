@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { expect, test } from '@playwright/test';
 
 // The first-run tour, for a person who skips it, at phone, tablet and desktop widths.

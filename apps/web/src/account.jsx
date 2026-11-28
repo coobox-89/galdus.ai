@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { useEffect, useState } from 'react';
 import { Compass, Download, KeyRound, LogOut, Sparkles, Trash2 } from 'lucide-react';
 import { useWs } from './workspace';

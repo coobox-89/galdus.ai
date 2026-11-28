@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Two-step verification with an authenticator app (TOTP, RFC 6238) and single-use recovery codes.
 
 Off by default: each person turns it on from their account. Once on, every sign-in (password,

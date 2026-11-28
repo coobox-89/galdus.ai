@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import { AnimatePresence } from 'motion/react';

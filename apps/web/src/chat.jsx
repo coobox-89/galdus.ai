@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BookOpen, Check, Copy, FileText, Image as ImageIcon, Paperclip, Pin, Plus, RotateCcw, Search, Send, Square, Trash2, X } from 'lucide-react';

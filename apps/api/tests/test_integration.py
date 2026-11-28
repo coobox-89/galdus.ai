@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """HTTP-level tests against a real, migrated PostgreSQL database.
 
 Run with TEST_DATABASE_URL=postgresql+asyncpg://... after `alembic upgrade head`.

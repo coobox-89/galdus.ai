@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import React, { useEffect, useMemo, useRef } from 'react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react';
 // Imported so Vite fingerprints the file names: a new artwork is never served from an old cache.

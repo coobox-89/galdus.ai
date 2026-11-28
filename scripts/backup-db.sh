@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
 # Back up the Galdus.ai database (application schema "public") to a compressed, encrypted file.
 #
 #   DATABASE_URL='postgresql://...' ./scripts/backup-db.sh [output-directory]

@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Regression tests for the fixes of the production-readiness security review (docs/security/review-2026-11-27.md).
 
 Each test names the finding it covers. Database tests need TEST_DATABASE_URL (see test_integration.py).

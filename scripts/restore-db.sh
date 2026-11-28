@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
 # Restore a backup made by backup-db.sh into an EMPTY database, then check it.
 #
 #   TARGET_DATABASE_URL='postgresql://...' ./scripts/restore-db.sh galdus-20261127T120000Z.dump[.gpg]

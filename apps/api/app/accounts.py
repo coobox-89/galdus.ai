@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Sign-in with Google, GitHub and Microsoft, password reset and change, chat preferences."""
 import hashlib
 import re

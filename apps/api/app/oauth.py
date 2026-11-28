@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """OAuth 2.0 for sign-in (Google, GitHub) and for cloud-drive connectors (Google Drive,
 Microsoft 365). State is encrypted (it carries the PKCE verifier) and expires in 10 minutes.
 """

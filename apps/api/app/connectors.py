@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Cloud-drive connectors: Google Drive and Microsoft 365 (OneDrive + SharePoint).
 
 A workspace owner/admin connects an account with OAuth (read-only scopes). Members can

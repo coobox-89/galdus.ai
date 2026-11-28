@@ -1,3 +1,8 @@
+# Galdus.ai
+# Copyright (C) 2026 Mario Cubello
+# Author: Mario Cubello
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Platform models are offered only when the server holds their credentials.
 
 Regression: render.yaml sets ALLOWED_MODELS=openai/gpt-4o-mini while OPENAI_API_KEY is optional; the

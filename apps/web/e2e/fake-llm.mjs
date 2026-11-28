@@ -1,3 +1,8 @@
+// Galdus.ai
+// Copyright (C) 2026 Mario Cubello
+// Author: Mario Cubello
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Minimal OpenAI-compatible server for end-to-end tests: chat (streamed or not) and embeddings.
 import http from 'node:http';
 
