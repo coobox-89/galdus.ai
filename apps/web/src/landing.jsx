@@ -48,7 +48,6 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
   const set = k => e => setForm({ ...form, [k]: e.target.value });
   const at = (d, from = { y: 18 }) => (reduce ? {} : { initial: { opacity: 0, filter: 'blur(8px)', ...from }, animate: { opacity: 1, x: 0, y: 0, filter: 'blur(0px)' },
     transition: { duration: .8, delay: d, ease: [0.16, 1, 0.3, 1] } });
-  const focusSignIn = () => { setMode('login'); setTimeout(() => emailRef.current?.focus(), 50); };
 
   async function submit(e) {
     e.preventDefault();
@@ -91,12 +90,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
       <Backdrop />
       <motion.header className="lh-top" {...at(.9, { y: -14 })}>
         <a className="lh-brand" href={href('/')} aria-label="Galdus.ai home"><Mark size={40} /><Wordmark /></a>
-        <nav className="lh-nav" aria-label="Site">
-          <a href="#features" onClick={e => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
-          <a href={`${REPO}/tree/main/docs`} target="_blank" rel="noreferrer">Docs</a>
-          <a href={REPO} target="_blank" rel="noreferrer">Source</a>
-          <button type="button" className="lh-signin" onClick={focusSignIn}>Sign in</button>
-        </nav>
+        <ModelMarquee place="top" />
       </motion.header>
 
       <main className="lh-main">
@@ -171,11 +165,36 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
         </div>
         <nav aria-label="Legal">
           <a href={href('/privacy')}>Privacy</a><a href={href('/terms')}>Terms</a>
-          <a href={href('/acceptable-use')}>Acceptable use</a><a href={REPO}>Source code</a>
+          <a href={href('/acceptable-use')}>Acceptable use</a><a href={href('/terms')}>Trademarks</a>
+          <a href={`${REPO}/tree/main/docs`} target="_blank" rel="noreferrer">Docs</a><a href={REPO} target="_blank" rel="noreferrer">Source code</a>
         </nav>
-        <p className="lh-meta"><span className="lh-pill"><i />Early access</span><span>© {new Date().getFullYear()} Mario Cubello, Galdus.ai. AGPL-3.0</span></p>
-        <p className="lh-tm">Third-party names and logos belong to their owners and are used only to indicate compatibility. Galdus.ai is independent and not affiliated with any AI provider. <a href={href('/terms')}>Trademarks</a></p>
+        <p className="lh-meta"><span className="lh-pill"><i />Public beta</span><span>© {new Date().getFullYear()} Mario Cubello, AGPL-3.0</span></p>
+        <ModelMarquee place="foot" />
       </motion.footer>
+    </div>
+  );
+}
+
+// Providers shown on the sign-in page. Marks are trademarks of their owners (see Terms, Trademarks).
+const MARQUEE = [['openai', 'OpenAI'], ['anthropic', 'Anthropic'], ['ollama', 'Ollama'], ['xai', 'xAI']];
+
+// Shown above the sign-in card on wide screens and in the footer on narrow ones (only one is visible).
+function ModelMarquee({ place }) {
+  const row = [...MARQUEE, ...MARQUEE, ...MARQUEE];
+  return (
+    <div className={`lh-models ${place}`}>
+      <span className="lh-models-label">Bring your own API key</span>
+      <div className="lh-marquee" role="img" aria-label={`Works with ${MARQUEE.map(m => m[1]).join(', ')} and more`}>
+        <div className="lh-marquee-track" aria-hidden="true">
+          {[row, row].map((r, k) => (
+            <div className="lh-marquee-set" key={k}>
+              {r.map(([id, name], i) => (
+                <span key={`${id}-${i}`} className="lh-logo" title={name} style={{ WebkitMaskImage: `url(${BASE}/brand/providers/${id}.svg)`, maskImage: `url(${BASE}/brand/providers/${id}.svg)` }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
