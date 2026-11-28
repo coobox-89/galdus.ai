@@ -3,7 +3,7 @@
 // Author: Mario Cubello
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { href } from './paths';
 import { Mark, Wordmark } from './brand';
 
@@ -30,6 +30,11 @@ function Operator() {
 }
 
 function Page({ title, intro, children }) {
+  // The page renders after load, so the browser cannot jump to #trademarks (or any section) by itself.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (id) document.getElementById(id)?.scrollIntoView();
+  }, []);
   return (
     <article className="legal">
       <a href={href('/')} className="legal-brand"><Mark size={28} /><Wordmark /></a>
