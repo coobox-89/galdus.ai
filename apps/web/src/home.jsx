@@ -110,9 +110,12 @@ function VikingScene() {
       <motion.div className="scene-viking-wrap"
         initial={reduce ? false : { opacity: 0, y: 28, scale: .97, filter: 'blur(10px)' }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
-        <motion.img className="scene-viking" src={vikingPhone} alt="A smiling Viking with a glowing digital arm, chatting with Galdus on his phone"
-          width="900" height="940" loading="lazy" decoding="async" draggable="false"
-          animate={reduce ? undefined : { y: [0, -6, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }} />
+        {/* The glow lives on this wrapper, outside the image's fade mask, so it is never clipped to a rectangle. */}
+        <div className="scene-viking-glow">
+          <motion.img className="scene-viking" src={vikingPhone} alt="A smiling Viking with a glowing digital arm, chatting with Galdus on his phone"
+            width="900" height="940" loading="lazy" decoding="async" draggable="false"
+            animate={reduce ? undefined : { y: [0, -6, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }} />
+        </div>
       </motion.div>
       <div className="scene-bubble" aria-hidden="true">
         <div className="scene-head"><Mark size={16} interactive={false} /><b>Galdus</b><span className="scene-live"><i />online</span></div>

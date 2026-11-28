@@ -808,8 +808,9 @@ input[type=range] { accent-color: var(--lime); padding: 0; background: none; bor
   background: radial-gradient(42% 38% at 58% 52%, rgba(182, 255, 0, .30), rgba(110, 220, 60, .14) 45%, transparent 72%),
               radial-gradient(60% 55% at 55% 55%, rgba(63, 212, 122, .12), transparent 70%); filter: blur(18px); }
 .scene-viking-wrap { position: absolute; right: 0; bottom: 0; width: 74%; }
+/* Lime rim light that follows the Viking's outline (drop-shadow uses the faded alpha of the image below). */
+.scene-viking-glow { filter: drop-shadow(0 0 14px rgba(182, 255, 0, .28)) drop-shadow(0 0 42px rgba(110, 220, 60, .18)); }
 .scene-viking { display: block; width: 100%; height: auto; user-select: none;
-  filter: drop-shadow(0 0 18px rgba(182, 255, 0, .22)) drop-shadow(0 20px 30px rgba(2, 8, 20, .55));
   /* The photo ends at the belt: fade it into the page instead of a hard edge. */
   -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 99%); mask-image: linear-gradient(to bottom, #000 80%, transparent 99%); }
 .scene-glow.live { animation: haloBreath 5.5s ease-in-out infinite; }
