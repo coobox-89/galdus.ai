@@ -90,6 +90,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
       <Backdrop />
       <motion.header className="lh-top" {...at(.9, { y: -14 })}>
         <a className="lh-brand" href={href('/')} aria-label="Galdus.ai home"><Mark size={40} /><Wordmark /></a>
+        <ModelMarquee place="top" />
       </motion.header>
 
       <main className="lh-main">
@@ -168,7 +169,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
           <a href={`${REPO}/tree/main/docs`} target="_blank" rel="noreferrer">Docs</a><a href={REPO} target="_blank" rel="noreferrer">Source code</a>
         </nav>
         <p className="lh-meta"><span className="lh-pill"><i />Public beta</span><span>© {new Date().getFullYear()} Mario Cubello, AGPL-3.0</span></p>
-        <ModelMarquee />
+        <ModelMarquee place="foot" />
       </motion.footer>
     </div>
   );
@@ -177,10 +178,11 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
 // Providers shown on the sign-in page. Marks are trademarks of their owners (see Terms, Trademarks).
 const MARQUEE = [['openai', 'OpenAI'], ['anthropic', 'Anthropic'], ['ollama', 'Ollama'], ['xai', 'xAI']];
 
-function ModelMarquee() {
+// Shown above the sign-in card on wide screens and in the footer on narrow ones (only one is visible).
+function ModelMarquee({ place }) {
   const row = [...MARQUEE, ...MARQUEE, ...MARQUEE];
   return (
-    <div className="lh-models">
+    <div className={`lh-models ${place}`}>
       <span className="lh-models-label">Bring your own API key</span>
       <div className="lh-marquee" role="img" aria-label={`Works with ${MARQUEE.map(m => m[1]).join(', ')} and more`}>
         <div className="lh-marquee-track" aria-hidden="true">
