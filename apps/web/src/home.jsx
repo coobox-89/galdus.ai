@@ -105,9 +105,15 @@ function VikingScene() {
   }, [shown, inView, reduce]);
   return (
     <figure className="scene" ref={ref}>
-      <span className="scene-glow" aria-hidden="true" />
-      <img className="scene-viking" src={vikingPhone} alt="A smiling Viking with the Galdus lime warpaint, chatting with Galdus on his phone"
-        width="393" height="532" loading="lazy" decoding="async" />
+      <span className={`scene-glow ${reduce ? '' : 'live'}`} aria-hidden="true" />
+      {/* Fades and rises in, then floats gently; still with reduced motion. */}
+      <motion.div className="scene-viking-wrap"
+        initial={reduce ? false : { opacity: 0, y: 28, scale: .97, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
+        <motion.img className="scene-viking" src={vikingPhone} alt="A smiling Viking with a glowing digital arm, chatting with Galdus on his phone"
+          width="900" height="940" loading="lazy" decoding="async" draggable="false"
+          animate={reduce ? undefined : { y: [0, -6, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }} />
+      </motion.div>
       <div className="scene-bubble" aria-hidden="true">
         <div className="scene-head"><Mark size={16} interactive={false} /><b>Galdus</b><span className="scene-live"><i />online</span></div>
         <ol className={`scene-chat ${reduce ? 'static' : ''}`}>
