@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
-import { BookOpen, Box, Bot, Code2, LogIn, Mail, ShieldCheck, Workflow } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { BookOpen, Box, Bot, ChevronLeft, ChevronRight, Code2, LogIn, Mail, ShieldCheck, Workflow } from 'lucide-react';
 import { api } from './api';
 import { API_BASE_URL } from './config';
 import { Mark, Wordmark } from './brand';
@@ -101,13 +101,7 @@ export function Landing({ onAuthenticated, message, setMessage, resetToken, mfaT
           </h1>
           <motion.p className="lh-sub" {...at(1.7)}>Forge the past. <span className="lime">Harness</span> the artificial.</motion.p>
           <motion.span className="lh-bar" initial={reduce ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 1.9, duration: .6, ease: [0.16, 1, 0.3, 1] }} />
-          <motion.ul id="features" className="lh-features" initial="hidden" animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: .08, delayChildren: reduce ? 0 : 2 } } }}>
-            {FEATURES.map(([Icon, t, d]) => (
-              <motion.li key={t} variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } } }}>
-                <Icon size={30} strokeWidth={1.6} className="ic" /><div><b>{t}</b><span>{d}</span></div>
-              </motion.li>))}
-          </motion.ul>
+          <motion.div className="lh-feat-wrap" {...at(2)}><FeatureCarousel reduce={reduce} /></motion.div>
         </section>
 
         <motion.section className="lh-card" aria-label="Sign in" {...at(1.3, { x: 40 })}>
@@ -196,5 +190,47 @@ function ModelMarquee({ place }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// One feature at a time: advances every few seconds with a fade, pauses on hover or keyboard focus,
+// lime arrows appear on hover (always visible on touch screens). No autoplay with reduced motion.
+const FEATURE_MS = 5000;
+
+function FeatureCarousel({ reduce }) {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const n = FEATURES.length;
+  const go = d => setI(v => (v + d + n) % n);
+  useEffect(() => {
+    if (reduce || paused) return undefined;
+    const t = setTimeout(() => setI(v => (v + 1) % n), FEATURE_MS);
+    return () => clearTimeout(t);
+  }, [i, paused, reduce, n]);
+  const [Icon, title, text] = FEATURES[i];
+  return (
+    <section id="features" className="lh-feat" aria-roledescription="carousel" aria-label="What Galdus.ai does"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false); }}
+      onKeyDown={e => { if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); }}>
+      <div className="lh-feat-stage" aria-live={paused || reduce ? 'polite' : 'off'}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={i} className="lh-feat-slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${n}: ${title}`}
+            initial={reduce ? false : { opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={reduce ? undefined : { opacity: 0, y: -8, filter: 'blur(4px)' }} transition={{ duration: .45, ease: [.2, .7, .2, 1] }}>
+            <span className="lh-feat-ic"><Icon size={30} strokeWidth={1.6} /></span>
+            <div><b>{title}</b><p>{text}</p></div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      <button type="button" className="lh-feat-arrow prev" aria-label="Previous feature" onClick={() => go(-1)}><ChevronLeft size={20} /></button>
+      <button type="button" className="lh-feat-arrow next" aria-label="Next feature" onClick={() => go(1)}><ChevronRight size={20} /></button>
+      <div className="lh-feat-dots">
+        {FEATURES.map(([, t], k) => (
+          <button key={t} type="button" className={k === i ? 'on' : ''} aria-label={`Show ${t}`} aria-current={k === i ? 'true' : undefined} onClick={() => setI(k)}>
+            {k === i && !reduce && !paused && <i style={{ animationDuration: `${FEATURE_MS}ms` }} />}
+          </button>))}
+      </div>
+    </section>
   );
 }
